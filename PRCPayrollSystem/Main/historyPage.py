@@ -146,25 +146,8 @@ class HistoryPage(ctk.CTkFrame):
                 messagebox.showerror("Error", f"Failed to delete file: {e}")
         # else: do nothing (cancel)
 
-    def show_loading_overlay(self, message="Loading..."):
-        if hasattr(self, '_loading_overlay') and self._loading_overlay:
-            return  # Already shown
-        self._loading_overlay = ctk.CTkFrame(self, fg_color="#ffffff", corner_radius=0)
-        self._loading_overlay.place(relx=0, rely=0, relwidth=1, relheight=1)
-        # Simulate blur by semi-transparent overlay (CustomTkinter doesn't support alpha, so use a light color)
-        self._loading_overlay.lift()
-        # Loading icon or text
-        loading_label = ctk.CTkLabel(self._loading_overlay, text=message, font=("Montserrat", 24, "bold"), text_color="#0a47b1")
-        loading_label.place(relx=0.5, rely=0.5, anchor="center")
-
-    def hide_loading_overlay(self):
-        if hasattr(self, '_loading_overlay') and self._loading_overlay:
-            self._loading_overlay.destroy()
-            self._loading_overlay = None
-
     def show_history_summary(self, fname):
-        self.show_loading_overlay()
-        # Enable the button and set its command for the selected file
+        # Removed loading overlay
         fpath = os.path.join(self.history_dir, fname)
         self._open_full_table_btn.configure(state="normal", command=lambda: self.open_full_table(fpath, fname))
         self.after(150, lambda: self._do_show_history_summary(fname))
@@ -180,7 +163,6 @@ class HistoryPage(ctk.CTkFrame):
                 reader = list(csv.reader(f))
                 if not reader:
                     ctk.CTkLabel(self.summary_frame, text="No data in file").pack()
-                    self.hide_loading_overlay()
                     return
                 headers = reader[0]
                 data_rows = reader[1:]  # Show all rows
@@ -249,7 +231,6 @@ class HistoryPage(ctk.CTkFrame):
 
         except Exception as e:
             ctk.CTkLabel(self.summary_frame, text=f"Error loading file: {e}").pack()
-        self.hide_loading_overlay()
 
     def show_payslip_preview(self, fname):
         # PDF preview feature removed
