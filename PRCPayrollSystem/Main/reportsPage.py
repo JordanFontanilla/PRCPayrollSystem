@@ -28,7 +28,7 @@ class ReportsPage(ctk.CTkFrame):
                         loaded_uac.append(row[0][4:])
                     elif row and row[0].startswith("DEDCOLS:"):
                         parts = row[0].split(":", 1)[1].split("|")
-                        # parts: [colidx0, colidx1, ..., '', colname0, colname1, ...]
+                        # Collision parts connect to colnames and dividers [colidx0, colidx1, ..., '', colname0, colname1, ...]
                         col_indices = []
                         colnames = []
                         for x in parts[1:]:
@@ -36,7 +36,7 @@ class ReportsPage(ctk.CTkFrame):
                                 col_indices.append(int(x))
                             else:
                                 break
-                        # Find the split between indices and colnames
+                        # Search for the split between indices and colnames (to connect)
                         idx_split = 1 + len(col_indices)
                         colnames = parts[idx_split:]
                         self._selected_other_deduction_cols = col_indices
@@ -157,7 +157,6 @@ class ReportsPage(ctk.CTkFrame):
             self.canvas.configure(yscrollcommand=lambda *args: None)
         else:
             self.canvas.configure(yscrollcommand=self.v_scroll.set)
-        # Horizontal scroll logic
         if self.canvas.bbox("all") and self.canvas.winfo_width() >= self.canvas.bbox("all")[2]:
             self.canvas.xview_moveto(0)
             self.canvas.configure(xscrollcommand=lambda *args: None)
@@ -165,12 +164,10 @@ class ReportsPage(ctk.CTkFrame):
             self.canvas.configure(xscrollcommand=self.h_scroll.set)
 
     def add_row(self):
-        # Add a new row at the end (to follow logic of adding and removing)
-        r = self.rows
         # Add row header
+        r = self.rows
         entry = ctk.CTkLabel(self.inner, text=str(r), width=30, fg_color="#e6e6e6", font=self.header_font)
         entry.grid(row=r, column=0, sticky="nsew", padx=0, pady=0, ipady=6)
-        # Add cells for each column (except header col)
         for c in range(1, self.cols):
             entry = ctk.CTkEntry(self.inner, width=90, justify="center", border_width=1, corner_radius=0)
             entry.configure(font=("Arial", 10), fg_color="white", text_color="black")
@@ -216,7 +213,7 @@ class ReportsPage(ctk.CTkFrame):
         self.cols -= 1
         self.inner.update_idletasks()
 
-    #Data aggregation
+    #Data aggregation (unsure)
     def set_aggregated_data(self, headers, data):
         """
         Set the table headers and data to the provided aggregated results and redraw the table.
@@ -232,7 +229,7 @@ class ReportsPage(ctk.CTkFrame):
         self.inner.update_idletasks()
 
     def enforce_number_format_all(self):
-        # Format all non-header cells to two decimals with commas for thousands
+        # Converion for data to 2 decimal places
         for r in range(1, self.rows):
             for c in range(2, self.cols):  # Skipping row headers because duhh
                 widgets = self.inner.grid_slaves(row=r, column=c)
@@ -250,13 +247,13 @@ class ReportsPage(ctk.CTkFrame):
                             continue
 
     def show_adjust_other_deductions_popup(self):
-        # For the user to be able to select columns for 'OTHER Deductions' from available columns in excelImport table
+        #for the option of the user
         popup = tk.Toplevel(self)
         popup.title("Adjust Other Deductions Columns")
         popup.geometry("650x520")
         popup.grab_set()
         tk.Label(popup, text="Select columns to sum for 'Other Deductions':", font=("Arial", 11, "bold")).pack(pady=(18, 8))
-        # Container canvas for scrollable area and buttons
+        # Container canvas for scrollingg
         container = tk.Frame(popup)
         container.pack(fill="both", expand=True, padx=20)
         # Scrollable frame for checkboxes
@@ -270,7 +267,7 @@ class ReportsPage(ctk.CTkFrame):
         def on_frame_configure(event):
             canvas.configure(scrollregion=canvas.bbox("all"))
         frame.bind("<Configure>", on_frame_configure)
-        # Get available columns from excelImportPage IF possible
+        # Get available columns from excelImportPage IFFF possible
         available_cols = []
         if hasattr(self.controller, 'frames') and 'ExcelImportPage' in self.controller.frames:
             excel_page = self.controller.frames['ExcelImportPage']
@@ -284,7 +281,7 @@ class ReportsPage(ctk.CTkFrame):
                                 available_cols.append((c, col_name))
         selected_vars = {}
         if not self._selected_other_deduction_cols:
-            self._selected_other_deduction_cols = list(range(9, 21))  # J (9) to U (20) inclusive
+            self._selected_other_deduction_cols = list(range(9, 21))  # J (9) to U (20) inclusive (might change later)
         current = set(self._selected_other_deduction_cols)
         for c, col_name in available_cols:
             var = tk.BooleanVar(value=((c-1) in current))
@@ -313,7 +310,7 @@ class ReportsPage(ctk.CTkFrame):
                                 col_name = widget.get().strip()
                                 if col_name:
                                     colnames.append(col_name)
-            # Always overwrite the file with only UAC lines and the new DEDCOLS line
+            # Auto overwrite the file with only UAC lines and the new DEDCOLS line
             lines = []
             if os.path.exists(settings_path):
                 with open(settings_path, 'r', encoding='utf-8') as f:
@@ -370,9 +367,8 @@ class ReportsPage(ctk.CTkFrame):
         col_info_label = tk.Label(popup, text="", font=("Arial", 11), fg="#0041C2")
         col_info_label.pack(pady=(8, 0))
 
-        # Store UAC codes locally for editing
+        # Store UAC codes locally for be able to editing
         uac_codes = list(self.default_row_headers)
-
         def refresh_uac_list():
             for widget in uac_inner.winfo_children():
                 widget.destroy()
@@ -430,7 +426,7 @@ class ReportsPage(ctk.CTkFrame):
             prev_count = len(self.default_row_headers)
             new_count = len(uac_codes)
             self.default_row_headers = list(uac_codes)
-            # Save to deductionSettings.csv in the correct format
+            # Path to save settings (unsure)
             settings_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "deductionSettings.csv")
             # Read existing lines to preserve DEDCOLS if present
             dedcols_line = None

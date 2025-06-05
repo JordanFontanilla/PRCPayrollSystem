@@ -120,11 +120,10 @@ class ExcelImportPage(ctk.CTkFrame):
                 widgets = self.inner.grid_slaves(row=r, column=c)
                 for widget in widgets:
                     if isinstance(widget, ctk.CTkEntry):
+                        value = widget.get()
+                        if value.strip() == "":
+                            continue
                         try:
-                            value = widget.get()
-                            if value.strip() == "":
-                                continue
-                            # Try to parse as float
                             num = float(value.replace(',', ''))
                             formatted = f"{num:,.2f}"
                             widget.delete(0, 'end')
@@ -368,13 +367,8 @@ class ExcelImportPage(ctk.CTkFrame):
                 for widget in widgets:
                     if isinstance(widget, ctk.CTkEntry):
                         v = widget.get()
-                        # Remove commas for numeric values
-                        try:
-                            v_clean = v.replace(",", "")
-                            float(v_clean)
-                            val = v_clean
-                        except Exception:
-                            val = v
+                        v_clean = v.replace(",", "")
+                        val = v_clean
                 row.append(val)
             data.append(row)
         return data

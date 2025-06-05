@@ -110,7 +110,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
             self.canvas.configure(yscrollcommand=self._canvas.master.children['!ctkscrollbar'].set)
 
     def get_current_earning_and_deduction_fields(self):
-        # Returns (earning_labels, deduction_labels) as used in the UI
+        # Returns (earning
         removed = set(getattr(self, '_removed_default_fields', set()))
         default_earning_labels = [
             "Basic Salary", "PERA"
@@ -675,6 +675,11 @@ class GeneratePayslipPage(ctk.CTkFrame):
             shutil.copy(file_path, dest_path)
         except Exception as e:
             print(f"Failed to save payslip copy: {e}")
+        # After saving the PDF, refresh the HistoryPage PDF list
+        if self.controller:
+            history_page = self.controller.get_page('HistoryPage')
+            if history_page:
+                history_page.refresh()
 
     def download_all_pdf(self):
         from reportlab.lib.pagesizes import A4
@@ -835,7 +840,11 @@ class GeneratePayslipPage(ctk.CTkFrame):
             shutil.copy(file_path, dest_path)
         except Exception as e:
             print(f"Failed to save all payslips copy: {e}")
-        # ...existing code...
+        # After saving the PDFs, refresh the HistoryPage PDF list
+        if self.controller:
+            history_page = self.controller.get_page('HistoryPage')
+            if history_page:
+                history_page.refresh()
 
     def show_adjust_payslip_popup(self):
         popup = tk.Toplevel(self)

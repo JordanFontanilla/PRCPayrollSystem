@@ -8,7 +8,7 @@ from controller import AppController
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
-#ready!
+#ready (ata)
 #for the gradient frame 
 class GradientFrame(ctk.CTkFrame):
     def __init__(self, master, color1, color2, **kwargs):
