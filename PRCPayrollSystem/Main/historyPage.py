@@ -2,15 +2,17 @@ import customtkinter as ctk
 import tkinter as tk
 import os
 import csv
+import sys
+from PRCPayrollSystem.Main.resource_utils import resource_path
 
 class HistoryPage(ctk.CTkFrame):
     def __init__(self, parent, controller=None):
         super().__init__(parent, fg_color="white")
         self.controller = controller
         self._loading_summary = False  # Flag to prevent re-entrant selection
-        self.history_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pastLoadedHistory")
+        self.history_dir = resource_path("PRCPayrollSystem/pastLoadedHistory")
         # Directory for payslip PDFs
-        self.payslip_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "pastPayslips")
+        self.payslip_dir = resource_path("PRCPayrollSystem/pastPayslips")
         self._build_ui()
         self.load_history_files()
 

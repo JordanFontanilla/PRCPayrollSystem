@@ -9,6 +9,8 @@ from reportlab.lib import colors
 from reportlab.lib.units import mm
 import csv
 import os
+import sys
+from PRCPayrollSystem.Main.resource_utils import resource_path
 
 class GeneratePayslipPage(ctk.CTkFrame):
     def __init__(self, parent, controller=None):
@@ -20,7 +22,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
     def load_updated_fields(self):
         """Load custom and removed fields from updatedFields.csv and apply to the payslip config."""
         import os, csv
-        updated_fields_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "updatedFields.csv")
+        updated_fields_path = resource_path("PRCPayrollSystem/settingsAndFields/updatedFields.csv")
         custom_map = {}
         custom_types = {}
         removed = set()
@@ -144,7 +146,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
         logo_path = None
         try:
             import os
-            logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Components", "PRClogo.png")
+            logo_path = resource_path("PRCPayrollSystem/Components/PRClogo.png")
             logo_img = Image.open(logo_path).resize((60, 60), Image.LANCZOS)
             self.logo = ImageTk.PhotoImage(logo_img)
             logo_label = tk.Label(self.inner_frame, image=self.logo, bg="white", borderwidth=0)
@@ -154,11 +156,14 @@ class GeneratePayslipPage(ctk.CTkFrame):
         ctk.CTkLabel(self.inner_frame, text="Professional Regulation Commission\nCordillera Administrative Region", font=("Arial", 15, "bold"), text_color="#222", fg_color="white").grid(row=0, column=1, columnspan=6, pady=(10, 0), sticky="w")
         # Name/Designation/Salary Grade
         ctk.CTkLabel(self.inner_frame, text="Name", font=("Arial", 12, "bold"), fg_color="white", anchor="w").grid(row=1, column=0, sticky="nsew", padx=2, pady=2)
-        ctk.CTkEntry(self.inner_frame, font=("Arial", 12), fg_color="white", border_width=0, corner_radius=0, width=120).grid(row=1, column=1, sticky="nsew", padx=2, pady=2)
+        self.name_entry = ctk.CTkEntry(self.inner_frame, font=("Arial", 12), fg_color="white", border_width=0, corner_radius=0, width=120)
+        self.name_entry.grid(row=1, column=1, sticky="nsew", padx=2, pady=2)
         ctk.CTkLabel(self.inner_frame, text="Designation", font=("Arial", 12, "bold"), fg_color="white", anchor="w").grid(row=1, column=2, sticky="nsew", padx=2, pady=2)
-        ctk.CTkEntry(self.inner_frame, font=("Arial", 12), fg_color="white", border_width=0, corner_radius=0, width=120).grid(row=1, column=3, sticky="nsew", padx=2, pady=2)
+        self.designation_entry = ctk.CTkEntry(self.inner_frame, font=("Arial", 12), fg_color="white", border_width=0, corner_radius=0, width=120)
+        self.designation_entry.grid(row=1, column=3, sticky="nsew", padx=2, pady=2)
         ctk.CTkLabel(self.inner_frame, text="Salary Grade", font=("Arial", 12, "bold"), fg_color="white", anchor="w").grid(row=1, column=4, sticky="nsew", padx=2, pady=2)
-        ctk.CTkEntry(self.inner_frame, font=("Arial", 12), fg_color="white", border_width=0, corner_radius=0, width=80).grid(row=1, column=5, sticky="nsew", padx=2, pady=2)
+        self.salary_grade_entry = ctk.CTkEntry(self.inner_frame, font=("Arial", 12), fg_color="white", border_width=0, corner_radius=0, width=80)
+        self.salary_grade_entry.grid(row=1, column=5, sticky="nsew", padx=2, pady=2)
 
         # Table header
         ctk.CTkLabel(self.inner_frame, text="Earnings", font=("Arial", 12, "bold"), fg_color="#e6e6e6", anchor="center").grid(row=2, column=0, columnspan=2, sticky="nsew", padx=1, pady=1)
@@ -202,20 +207,15 @@ class GeneratePayslipPage(ctk.CTkFrame):
 
     def set_employee_info(self, name, designation, salary_grade):
         # Set the values in the payslip table entries for Name, Designation, Salary Grade
-        # These are the first row's entry widgets in the payslip table
-        # Find and set the corresponding CTkEntry widgets
-        for widget in self.inner_frame.winfo_children():
-            info = widget.grid_info()
-            if info.get('row') == 1:
-                if info.get('column') == 1 and isinstance(widget, ctk.CTkEntry):
-                    widget.delete(0, 'end')
-                    widget.insert(0, name)
-                elif info.get('column') == 3 and isinstance(widget, ctk.CTkEntry):
-                    widget.delete(0, 'end')
-                    widget.insert(0, designation)
-                elif info.get('column') == 5 and isinstance(widget, ctk.CTkEntry):
-                    widget.delete(0, 'end')
-                    widget.insert(0, salary_grade)
+        if hasattr(self, 'name_entry'):
+            self.name_entry.delete(0, 'end')
+            self.name_entry.insert(0, name)
+        if hasattr(self, 'designation_entry'):
+            self.designation_entry.delete(0, 'end')
+            self.designation_entry.insert(0, designation)
+        if hasattr(self, 'salary_grade_entry'):
+            self.salary_grade_entry.delete(0, 'end')
+            self.salary_grade_entry.insert(0, salary_grade)
 
     def set_employee_names(self, names):
         # Clear the listbox
@@ -389,7 +389,22 @@ class GeneratePayslipPage(ctk.CTkFrame):
             self.emp_listbox.selection_set(0)
             self.emp_listbox.activate(0)
             self._draw_payslip()  # Redraw the payslip layout to reflect new/removed fields
-            self._on_payslip_record_select_from_name(names[0])
+            # Get the first employee's info
+            name = names[0]
+            designation = ""
+            salary_grade = ""
+            if hasattr(self.controller, 'frames') and 'ImportEmployeePage' in self.controller.frames:
+                import_page = self.controller.frames['ImportEmployeePage']
+                table = getattr(import_page, 'table', None)
+                if table:
+                    for r in range(1, table.rows):
+                        cell = table.cells.get((r, 0))
+                        if cell and cell.get().strip() == name:
+                            designation = table.cells.get((r, 1)).get() if table.cells.get((r, 1)) else ''
+                            salary_grade = table.cells.get((r, 2)).get() if table.cells.get((r, 2)) else ''
+                            break
+            self.set_employee_info(name, designation, salary_grade)
+            self._on_payslip_record_select_from_name(name)
             import tkinter.messagebox as messagebox
             if excel_table_loaded:
                 pass
@@ -411,6 +426,8 @@ class GeneratePayslipPage(ctk.CTkFrame):
         if hasattr(self, '_payslip_data') and name in self._payslip_data:
             self.fill_payslip_fields(self._payslip_data[name])
         # Always update name, designation, and salary grade fields from ImportEmployeePage
+        designation = ""
+        salary_grade = ""
         if hasattr(self.controller, 'frames') and 'ImportEmployeePage' in self.controller.frames:
             import_page = self.controller.frames['ImportEmployeePage']
             # Search for the row with the matching name (skip header)
@@ -419,8 +436,8 @@ class GeneratePayslipPage(ctk.CTkFrame):
                 if cell and cell.get().strip() == name:
                     designation = import_page.table.cells.get((r, 1)).get() if import_page.table.cells.get((r, 1)) else ''
                     salary_grade = import_page.table.cells.get((r, 2)).get() if import_page.table.cells.get((r, 2)) else ''
-                    self.set_employee_info(name, designation, salary_grade)
                     break
+        self.set_employee_info(name, designation, salary_grade)
 
     def fill_payslip_fields(self, row_data):
         # Only fill the payslip fields (salary to MPL) in the payslip document, do not touch designation or salary grade
@@ -573,7 +590,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
         netpay2 = row_data_ci.get("NETPAY (2ND HALF)", "")
         y = height - margin
         try:
-            logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Components", "PRClogo.png")
+            logo_path = resource_path("PRCPayrollSystem/Components/PRClogo.png")
             c.drawImage(ImageReader(logo_path), logo_x, logo_y, logo_width, logo_height, mask='auto')
         except Exception:
             pass
@@ -655,7 +672,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
         # Save a copy in pastPayslips folder
         try:
             import shutil
-            past_payslips_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pastPayslips")
+            past_payslips_dir = resource_path("PRCPayrollSystem/pastPayslips")
             if not os.path.exists(past_payslips_dir):
                 os.makedirs(past_payslips_dir)
             # Check if there are already 100 or more payslips
@@ -742,7 +759,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
                     header_y = y - 10
                 # Draw logo for each payslip
                 try:
-                    logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Components", "PRClogo.png")
+                    logo_path = resource_path("PRCPayrollSystem/Components/PRClogo.png")
                     c.drawImage(ImageReader(logo_path), logo_x, header_y + 10, logo_width, logo_height, mask='auto')
                 except Exception:
                     pass
@@ -831,7 +848,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
         # Save a copy in pastPayslips folder
         try:
             import shutil
-            past_payslips_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pastPayslips")
+            past_payslips_dir = resource_path("PRCPayrollSystem/pastPayslips")
             if not os.path.exists(past_payslips_dir):
                 os.makedirs(past_payslips_dir)
             from datetime import datetime
@@ -860,8 +877,8 @@ class GeneratePayslipPage(ctk.CTkFrame):
 
     def save_updated_fields(self):
         """Save custom and removed fields to updatedFields.csv and update payslipSettings.csv."""
-        updated_fields_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "updatedFields.csv")
-        payslip_settings_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "payslipSettings.csv")
+        updated_fields_path = resource_path("PRCPayrollSystem/settingsAndFields/updatedFields.csv")
+        payslip_settings_path = resource_path("PRCPayrollSystem/settingsAndFields/payslipSettings.csv")
         custom_map = getattr(self, '_custom_field_map', {})
         custom_types = getattr(self, '_custom_field_types', {})
         removed = getattr(self, '_removed_default_fields', set())

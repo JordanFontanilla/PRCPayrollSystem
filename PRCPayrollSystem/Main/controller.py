@@ -1,9 +1,9 @@
 import customtkinter as ctk
-from excelImportPage import ExcelImportPage
-from importEmployee import ImportEmployeePage
-from reportsPage import ReportsPage
-from generatePayslip import GeneratePayslipPage
-from historyPage import HistoryPage
+from PRCPayrollSystem.Main.excelImportPage import ExcelImportPage
+from PRCPayrollSystem.Main.importEmployee import ImportEmployeePage
+from PRCPayrollSystem.Main.reportsPage import ReportsPage
+from PRCPayrollSystem.Main.generatePayslip import GeneratePayslipPage
+from PRCPayrollSystem.Main.historyPage import HistoryPage
 
 class AppController(ctk.CTk):
     def __init__(self):
@@ -11,7 +11,7 @@ class AppController(ctk.CTk):
         self.title("Payroll System")
         self.geometry("950x600")
         self.frames = {}
-        from Main import MainMenu  
+        from PRCPayrollSystem.Main.Main import MainMenu  # Import here to avoid circular import
         for F in (MainMenu, ExcelImportPage, ImportEmployeePage, ReportsPage, GeneratePayslipPage, HistoryPage):
             frame = F(self, self)
             self.frames[F.__name__] = frame
