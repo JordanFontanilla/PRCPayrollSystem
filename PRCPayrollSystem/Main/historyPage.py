@@ -94,8 +94,12 @@ class HistoryPage(ctk.CTkFrame):
         self.payslip_files = []
         if not os.path.exists(self.payslip_dir):
             os.makedirs(self.payslip_dir, exist_ok=True)
-        pdfs = [fname for fname in sorted(os.listdir(self.payslip_dir)) if fname.lower().endswith('.pdf')]
-        pdfs = sorted(pdfs, reverse=True)
+        
+        # Get full paths of PDF files and sort by modification time
+        pdf_paths = [os.path.join(self.payslip_dir, fname) for fname in os.listdir(self.payslip_dir) if fname.lower().endswith('.pdf')]
+        pdf_paths.sort(key=os.path.getmtime, reverse=True)
+        pdfs = [os.path.basename(p) for p in pdf_paths]
+
         for i, fname in enumerate(pdfs):
             self.payslip_files.append(fname)
             display_name = f"{i+1:02d}.  {fname}"
@@ -105,18 +109,6 @@ class HistoryPage(ctk.CTkFrame):
             self.payslip_listbox.configure(state="disabled")
         else:
             self.payslip_listbox.configure(state="normal")
-        self._history_vars = []
-        self._payslip_vars = []
-        self._history_checkboxes = []
-        self._payslip_checkboxes = []
-        for i, fname in enumerate(self.history_files):
-            self.listbox.delete(i)
-            display_name = f"{i+1:02d}.  {fname}"
-            self.listbox.insert(tk.END, display_name)
-        for i, fname in enumerate(self.payslip_files):
-            self.payslip_listbox.delete(i)
-            display_name = f"{i+1:02d}.  {fname}"
-            self.payslip_listbox.insert(tk.END, display_name)
 
     def on_select(self, event):
         # Disable old single-file delete logic; only enable Open Full Table

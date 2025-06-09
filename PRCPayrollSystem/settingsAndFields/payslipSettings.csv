@@ -1,6 +1,7 @@
 Field,Type,Columns
 Basic Salary,earnings,
 PERA,earnings,
+asdq,earnings,J
 Withholding Tax,deductions,
 GSIS Employee Share,deductions,
 PhilHealth Employee Share,deductions,
@@ -13,6 +14,3 @@ GSIS Emergency Loan,deductions,
 GSIS CPL,deductions,
 PAGIBIG Calamity Loan,deductions,
 PAGIBIG MPL,deductions,
-asd,deductions,J
-asde,deductions,J
-asdq,deductions,J

@@ -1,5 +1,3 @@
-Type,Field,Columns
-custom,asd,J
-custom,asde,J
-custom,asdq,J
-removed,GSIS GFAL,
+Type,Field,Columns,FieldType
+custom,asdq,J,earnings
+removed,GSIS GFAL,,

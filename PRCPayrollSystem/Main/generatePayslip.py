@@ -11,6 +11,7 @@ import csv
 import os
 import sys
 from PRCPayrollSystem.Main.resource_utils import resource_path
+import re
 
 class GeneratePayslipPage(ctk.CTkFrame):
     def __init__(self, parent, controller=None):
@@ -21,7 +22,6 @@ class GeneratePayslipPage(ctk.CTkFrame):
 
     def load_updated_fields(self):
         """Load custom and removed fields from updatedFields.csv and apply to the payslip config."""
-        import os, csv
         updated_fields_path = resource_path("PRCPayrollSystem/settingsAndFields/updatedFields.csv")
         custom_map = {}
         custom_types = {}
@@ -29,19 +29,18 @@ class GeneratePayslipPage(ctk.CTkFrame):
         if os.path.exists(updated_fields_path):
             with open(updated_fields_path, 'r', encoding='utf-8') as f:
                 reader = csv.DictReader(f)
+                # Make fieldnames lowercase for robustness
+                reader.fieldnames = [field.strip().lower() for field in reader.fieldnames] if reader.fieldnames else []
                 for row in reader:
-                    typ = row.get("Type", "").strip().lower()
-                    field = row.get("Field", "").strip()
-                    cols = [c.strip() for c in row.get("Columns", "").split(',') if c.strip()]
+                    typ = row.get("type", "").strip().lower()
+                    field = row.get("field", "").strip()
                     if typ == "custom" and field:
+                        cols = [c.strip() for c in row.get("columns", "").split(',') if c.strip()]
+                        field_type = row.get("fieldtype", "earnings").strip().lower()
                         custom_map[field] = cols
-                        # Try to infer type from previous session if possible, else default to 'earnings'
-                        if hasattr(self, '_custom_field_types') and field in self._custom_field_types:
-                            custom_types[field] = self._custom_field_types[field]
-                        else:
-                            custom_types[field] = "earnings"
+                        custom_types[field] = field_type
                     elif typ == "removed" and field:
-                        removed.add(field)
+                        removed.add(field.upper()) # Always store removed as uppercase
         self._custom_field_map = custom_map
         self._custom_field_types = custom_types
         self._removed_default_fields = removed
@@ -102,6 +101,10 @@ class GeneratePayslipPage(ctk.CTkFrame):
         self._canvas = self.canvas
         # Payslip layout
         self._draw_payslip()
+
+    def _normalize_name(self, name):
+        # Convert to uppercase, remove punctuation/extra whitespace to create a consistent key.
+        return re.sub(r'\s+', ' ', re.sub(r'[^\w\s]', '', str(name))).upper().strip()
 
     def _update_scrollregion(self):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
@@ -245,9 +248,29 @@ class GeneratePayslipPage(ctk.CTkFrame):
             self.set_employee_info(name, designation, salary_grade)
 
     def load_payslip_records(self):
-        # Load all names and payslip details from ExcelImportPage and update the payslip list and details
-        names = []
-        payslip_data = {}
+        # 1. Load master employee list from ImportEmployeePage (the single source of truth for employees)
+        master_names = []
+        employee_details = {}
+        if hasattr(self.controller, 'frames') and 'ImportEmployeePage' in self.controller.frames:
+            import_page = self.controller.frames['ImportEmployeePage']
+            table = getattr(import_page, 'table', None)
+            if table:
+                # Assuming Name, Designation, Salary Grade are the first three columns
+                for r in range(1, table.rows):  # Skip header
+                    name_cell = table.cells.get((r, 0))
+                    name = name_cell.get().strip() if name_cell and name_cell.get() else ''
+                    if name:
+                        master_names.append(name)
+                        designation_cell = table.cells.get((r, 1))
+                        salary_grade_cell = table.cells.get((r, 2))
+                        designation = designation_cell.get().strip() if designation_cell and designation_cell.get() else ''
+                        salary_grade = salary_grade_cell.get().strip() if salary_grade_cell and salary_grade_cell.get() else ''
+                        employee_details[name] = {'designation': designation, 'salary_grade': salary_grade}
+        
+        self._employee_details = employee_details # Store for reuse
+
+        # 2. Load payslip financial data from the imported Excel file into a temporary dictionary
+        raw_payslip_data = {}
         excel_table_loaded = False
         if hasattr(self.controller, 'frames') and 'ExcelImportPage' in self.controller.frames:
             excel_page = self.controller.frames['ExcelImportPage']
@@ -256,7 +279,16 @@ class GeneratePayslipPage(ctk.CTkFrame):
                 if table_data and len(table_data) > 1:
                     excel_table_loaded = True
                     header_row = [str(h).strip() for h in table_data[0]]
-                    name_idx = None
+                    name_idx = -1
+                    # Find name column index case-insensitively
+                    for i, h in enumerate(header_row):
+                        if h.strip().upper() in ("NAME", "EMPLOYEE NAME"):
+                            name_idx = i
+                            break
+                    if name_idx == -1:
+                         messagebox.showerror("Error", "Could not find 'Name' or 'Employee Name' column in the imported Excel file.")
+                         return
+
                     # Map payslip fields to their indices in Excel
                     field_map = {
                         "BASIC SALARY": ["SALARY", "MO.SALARY", "MONTHLY SALARY"],
@@ -282,20 +314,15 @@ class GeneratePayslipPage(ctk.CTkFrame):
                     pagibig_indices = []
                     for i, h in enumerate(header_row):
                         h_upper = h.strip().upper()
-                        if h_upper in ("NAME", "EMPLOYEE NAME"):
-                            name_idx = i
                         if "PAGIBIG" in h_upper:
                             pagibig_indices.append(i)
                         for key, aliases in field_map.items():
+                            if key == "PAGIBIG EMPLOYEE SHARE": continue
                             for alias in aliases:
                                 if h_upper == alias.upper():
-                                    if key == "PAGIBIG EMPLOYEE SHARE":
-                                        pass
-                                    else:
-                                        field_indices[key] = i
+                                    field_indices[key] = i
                     # --- Custom field index mapping ---
                     custom_map = getattr(self, '_custom_field_map', {})
-                    custom_types = getattr(self, '_custom_field_types', {})
                     custom_indices = {}
                     for field, excel_names in custom_map.items():
                         indices = []
@@ -333,9 +360,8 @@ class GeneratePayslipPage(ctk.CTkFrame):
                         custom_indices[field] = indices
                     # ---
                     for row in table_data[1:]:
-                        name = row[name_idx].strip() if name_idx is not None and len(row) > name_idx else ''
-                        if name:
-                            names.append(name)
+                        excel_name = row[name_idx].strip() if name_idx is not None and len(row) > name_idx else ''
+                        if excel_name:
                             row_data = {}
                             for key in field_map.keys():
                                 if key in ("NAME", "DESIGNATION", "SALARY GRADE"):
@@ -346,8 +372,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
                                         try:
                                             val = row[idx]
                                             pagibig_sum += float(val) if val not in (None, '', 'nan') else 0.0
-                                        except (ValueError, TypeError, IndexError):
-                                            pass
+                                        except (ValueError, TypeError, IndexError): pass
                                     row_data[key] = f"{pagibig_sum:.2f}" if pagibig_sum != 0 else ''
                                 else:
                                     idx = field_indices.get(key)
@@ -362,47 +387,43 @@ class GeneratePayslipPage(ctk.CTkFrame):
                                         if v not in (None, '', 'nan'):
                                             val_sum += float(v)
                                             has_value = True
-                                    except (ValueError, TypeError, IndexError):
-                                        continue
+                                    except (ValueError, TypeError, IndexError): continue
                                 if has_value:
                                     row_data[field] = f"{val_sum:.2f}" if len(indices) > 1 else str(val_sum) if val_sum != 0 else ''
                                 else:
                                     row_data[field] = ''
-                            payslip_data[name] = row_data
-        # If no names loaded from ExcelImportPage, fallback to ImportEmployeePage
-        if not names and hasattr(self.controller, 'frames') and 'ImportEmployeePage' in self.controller.frames:
-            import_page = self.controller.frames['ImportEmployeePage']
-            table = getattr(import_page, 'table', None)
-            if table:
-                name_idx = 0
-                for r in range(1, table.rows):
-                    cell = table.cells.get((r, name_idx))
-                    name = cell.get().strip() if cell else ''
-                    if name:
-                        names.append(name)
-        self.set_employee_names(names)
-        self._payslip_data = payslip_data
+                            raw_payslip_data[excel_name] = row_data
+        
+        # 3. Reconcile financial data with master employee list.
+        final_payslip_data = {}
+        # Create a map from a normalized excel name to its original data.
+        raw_payslip_data_map = { self._normalize_name(name): data for name, data in raw_payslip_data.items() }
+
+        for name in master_names:
+            normalized_master_name = self._normalize_name(name)
+            if normalized_master_name in raw_payslip_data_map:
+                # If a direct normalized match is found, use it.
+                final_payslip_data[name] = raw_payslip_data_map[normalized_master_name]
+            else:
+                # If no financial data is found, the employee will have an empty payslip.
+                final_payslip_data[name] = {}
+        
+        # 4. Update UI with reconciled data
+        self.set_employee_names(master_names)
+        self._payslip_data = final_payslip_data
         self.emp_listbox.bind('<<ListboxSelect>>', self._on_payslip_record_select)
+
         # Always load the first employee's payslip data if available
-        if names:
+        if master_names:
             self.emp_listbox.selection_clear(0, 'end')
             self.emp_listbox.selection_set(0)
             self.emp_listbox.activate(0)
             self._draw_payslip()  # Redraw the payslip layout to reflect new/removed fields
-            # Get the first employee's info
-            name = names[0]
-            designation = ""
-            salary_grade = ""
-            if hasattr(self.controller, 'frames') and 'ImportEmployeePage' in self.controller.frames:
-                import_page = self.controller.frames['ImportEmployeePage']
-                table = getattr(import_page, 'table', None)
-                if table:
-                    for r in range(1, table.rows):
-                        cell = table.cells.get((r, 0))
-                        if cell and cell.get().strip() == name:
-                            designation = table.cells.get((r, 1)).get() if table.cells.get((r, 1)) else ''
-                            salary_grade = table.cells.get((r, 2)).get() if table.cells.get((r, 2)) else ''
-                            break
+            # Get the first employee's info from our loaded details
+            name = master_names[0]
+            details = self._employee_details.get(name, {})
+            designation = details.get('designation', '')
+            salary_grade = details.get('salary_grade', '')
             self.set_employee_info(name, designation, salary_grade)
             self._on_payslip_record_select_from_name(name)
             import tkinter.messagebox as messagebox
@@ -425,18 +446,13 @@ class GeneratePayslipPage(ctk.CTkFrame):
         # Lookup payslip data and fill payslip fields
         if hasattr(self, '_payslip_data') and name in self._payslip_data:
             self.fill_payslip_fields(self._payslip_data[name])
-        # Always update name, designation, and salary grade fields from ImportEmployeePage
+        # Always update name, designation, and salary grade fields from stored details
         designation = ""
         salary_grade = ""
-        if hasattr(self.controller, 'frames') and 'ImportEmployeePage' in self.controller.frames:
-            import_page = self.controller.frames['ImportEmployeePage']
-            # Search for the row with the matching name (skip header)
-            for r in range(1, import_page.table.rows):
-                cell = import_page.table.cells.get((r, 0))
-                if cell and cell.get().strip() == name:
-                    designation = import_page.table.cells.get((r, 1)).get() if import_page.table.cells.get((r, 1)) else ''
-                    salary_grade = import_page.table.cells.get((r, 2)).get() if import_page.table.cells.get((r, 2)) else ''
-                    break
+        if hasattr(self, '_employee_details') and name in self._employee_details:
+            details = self._employee_details[name]
+            designation = details.get('designation', '')
+            salary_grade = details.get('salary_grade', '')
         self.set_employee_info(name, designation, salary_grade)
 
     def fill_payslip_fields(self, row_data):
@@ -602,22 +618,13 @@ class GeneratePayslipPage(ctk.CTkFrame):
         c.setFont("Helvetica", 12)
         c.drawString(margin, y, f"Name: {name}")
         y -= 16
-        # Always get designation and salary grade from ImportEmployeePage
+        # Always get designation and salary grade from stored details
         designation = ""
         salary_grade = ""
-        if hasattr(self.controller, 'frames') and 'ImportEmployeePage' in self.controller.frames:
-            import_page = self.controller.frames['ImportEmployeePage']
-            table = getattr(import_page, 'table', None)
-            if table and hasattr(self, '_employee_names'):
-                for r in range(1, table.rows):
-                    cell = table.cells.get((r, 0))
-                    emp_name = cell.get().strip() if cell else ''
-                    if emp_name == name:
-                        designation_cell = table.cells.get((r, 1))
-                        salary_grade_cell = table.cells.get((r, 2))
-                        designation = designation_cell.get().strip() if designation_cell else ''
-                        salary_grade = salary_grade_cell.get().strip() if salary_grade_cell else ''
-                        break
+        if hasattr(self, '_employee_details') and name in self._employee_details:
+            details = self._employee_details[name]
+            designation = details.get('designation', '')
+            salary_grade = details.get('salary_grade', '')
         c.drawString(margin, y, f"Designation: {designation}")
         c.drawRightString(width - margin, y, f"Salary Grade: {salary_grade}")
         y -= 28
@@ -775,20 +782,11 @@ class GeneratePayslipPage(ctk.CTkFrame):
                 y -= 16
                 designation = ""
                 salary_grade = ""
-                # Always get designation and salary grade from ImportEmployeePage table (like single PDF)
-                if hasattr(self.controller, 'frames') and 'ImportEmployeePage' in self.controller.frames:
-                    import_page = self.controller.frames['ImportEmployeePage']
-                    table = getattr(import_page, 'table', None)
-                    if table:
-                        for r in range(1, table.rows):
-                            cell = table.cells.get((r, 0))
-                            emp_name = cell.get().strip() if cell else ''
-                            if emp_name == name:
-                                designation_cell = table.cells.get((r, 1))
-                                salary_grade_cell = table.cells.get((r, 2))
-                                designation = designation_cell.get().strip() if designation_cell else ''
-                                salary_grade = salary_grade_cell.get().strip() if salary_grade_cell else ''
-                                break
+                # Always get designation and salary grade from stored details
+                if hasattr(self, '_employee_details') and name in self._employee_details:
+                    details = self._employee_details[name]
+                    designation = details.get('designation', '')
+                    salary_grade = details.get('salary_grade', '')
                 c.drawString(margin, y, f"Designation: {designation}")
                 c.drawRightString(width - margin, y, f"Salary Grade: {salary_grade}")
                 y -= 28
@@ -885,11 +883,12 @@ class GeneratePayslipPage(ctk.CTkFrame):
         # Save to updatedFields.csv (for UI logic)
         with open(updated_fields_path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
-            writer.writerow(["Type", "Field", "Columns"])
+            writer.writerow(["Type", "Field", "Columns", "FieldType"])
             for field, cols in custom_map.items():
-                writer.writerow(["custom", field, ','.join(cols)])
+                field_type = custom_types.get(field, "earnings")
+                writer.writerow(["custom", field, ','.join(cols), field_type])
             for field in removed:
-                writer.writerow(["removed", field, ""])
+                writer.writerow(["removed", field, "", ""])
         # Save to payslipSettings.csv (for persistent config)
         # Compose the current field list (order, type, excel columns)
         earning_labels, deduction_labels = self.get_current_earning_and_deduction_fields()
@@ -994,7 +993,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
                 # Remove from default fields by tracking removed fields
                 if not hasattr(self, '_removed_default_fields'):
                     self._removed_default_fields = set()
-                self._removed_default_fields.add(field)
+                self._removed_default_fields.add(field.upper()) # Store as upper to match check
             # After removal, immediately update CSV to reflect only current fields
             self.save_updated_fields()
             if hasattr(self, 'load_payslip_records'):

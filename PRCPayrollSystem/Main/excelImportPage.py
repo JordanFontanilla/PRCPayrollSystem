@@ -3,6 +3,7 @@ import tkinter as tk
 import os
 import csv
 import glob
+from PRCPayrollSystem.Main.resource_utils import resource_path
 
 class ExcelImportPage(ctk.CTkFrame):
     def __init__(self, parent, controller=None):
@@ -11,9 +12,7 @@ class ExcelImportPage(ctk.CTkFrame):
         self.rows = 8  # 7 data + 1 header
         self.cols = 11
         # Directory to save history files (always under app folder)
-        self.history_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pastLoadedHistory")
-        if not os.path.exists(self.history_dir):
-            os.makedirs(self.history_dir)
+        self.history_dir = resource_path("PRCPayrollSystem/pastLoadedHistory")
         self._build_ui()
 
     def _build_ui(self):
@@ -406,7 +405,7 @@ class ExcelImportPage(ctk.CTkFrame):
 
     def save_imported_table_to_history(self, data, headers):
         # Determine history folder path
-        history_dir = os.path.join(os.path.dirname(__file__), "pastLoadedHistory")
+        history_dir = self.history_dir
         os.makedirs(history_dir, exist_ok=True)
         # List all CSVs in the folder
         csv_files = sorted(
