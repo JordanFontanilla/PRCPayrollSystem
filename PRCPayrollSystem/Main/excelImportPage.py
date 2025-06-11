@@ -9,9 +9,9 @@ class ExcelImportPage(ctk.CTkFrame):
     def __init__(self, parent, controller=None):
         super().__init__(parent, fg_color="white")
         self.controller = controller
-        self.rows = 8  # 7 data + 1 header
+        self.rows = 8  # 7 data + 1 header (DEFAULT LOGIC)
         self.cols = 11
-        # Directory to save history files (always under app folder)
+        # Directory to save history files (always same folder)
         self.history_dir = resource_path("pastLoadedHistory")
         self._build_ui()
 
@@ -113,7 +113,7 @@ class ExcelImportPage(ctk.CTkFrame):
             self.inner.grid_rowconfigure(r, weight=1)
 
     def enforce_two_decimal_all(self):
-        # Format all non-header cells to two decimals if possible, with commas for thousands
+        # for decimal formatting
         for r in range(1, self.rows):
             for c in range(1, self.cols):
                 widgets = self.inner.grid_slaves(row=r, column=c)
@@ -151,13 +151,13 @@ class ExcelImportPage(ctk.CTkFrame):
             self.canvas.configure(xscrollcommand=self.h_scroll.set)
 
     def add_row(self):
-        # Add a new row at the end (after the last data row)
+        # Add a new row at the end 
         header_font = ("Arial", 10, "bold")
         r = self.rows
         # Add row header
         entry = ctk.CTkLabel(self.inner, text=str(r), width=30, fg_color="#e6e6e6", font=header_font)
         entry.grid(row=r, column=0, sticky="nsew", padx=0, pady=0, ipady=6)
-        # Add cells for each column (except header col)
+        # Add cells for each column
         for c in range(1, self.cols):
             entry = ctk.CTkEntry(self.inner, width=90, justify="center", border_width=1, corner_radius=0)
             entry.configure(font=("Arial", 10), fg_color="white", text_color="black")
@@ -214,7 +214,7 @@ class ExcelImportPage(ctk.CTkFrame):
         """
         # Dynamically set rows and cols to fit the data
         self.cols = max(len(headers), max((len(row) for row in data), default=0))
-        self.rows = len(data) + 1  # +1 for column letters only
+        self.rows = len(data) + 1  
         # Treat the loaded header row as the first data row
         self.headers = [chr(65 + c) if c < 26 else chr(65 + (c // 26) - 1) + chr(65 + (c % 26)) for c in range(self.cols)]
         # Format numeric cells with thousands comma and two decimals
@@ -240,18 +240,9 @@ class ExcelImportPage(ctk.CTkFrame):
         self._draw_table()
         self.inner.update_idletasks()
 
-    def generate_reports(self):
-        # Placeholder for report generation logic
-        pass
-
-    def generate_payslip(self):
-        # Placeholder for payslip generation logic
-        pass
-
     def go_to_reports_page(self):
         if self.controller:
-            # --- AGGREGATE AND PASS DATA TO REPORTS PAGE ---
-            # Get excel data from the table (self.data)
+            # Get excel data from the table 
             excel_data = []
             for r in range(1, self.rows):
                 row = []
@@ -321,7 +312,7 @@ class ExcelImportPage(ctk.CTkFrame):
             return
         rows, cols = df.shape
         # Adjust table size
-        while self.rows > rows+2:  # +2 for header row and col
+        while self.rows > rows+2:  
             self.remove_row()
         while self.cols > cols+1:
             self.remove_col()
@@ -329,14 +320,13 @@ class ExcelImportPage(ctk.CTkFrame):
             self.add_row()
         while self.cols < cols+1:
             self.add_col()
-        # Fill header row (row=1, col=1:cols)
         for c in range(cols):
             entry = self.inner.grid_slaves(row=1, column=c+1)
             if entry:
                 entry[0].delete(0, tk.END)
                 entry[0].insert(0, str(df.columns[c]))
                 entry[0].update()
-        # Fill data rows (row=2+, col=1:cols)
+        # Fill data rows 
         for r in range(rows):
             for c in range(cols):
                 value = df.iat[r, c]
@@ -397,7 +387,7 @@ class ExcelImportPage(ctk.CTkFrame):
             writer = csv.writer(f)
             for row in table_data:
                 writer.writerow(row)
-        # --- Refresh HistoryPage if it exists ---
+        # Refresh HistoryPage if it exists 
         if self.controller and hasattr(self.controller, 'get_page'):
             history_page = self.controller.get_page('HistoryPage')
             if history_page and hasattr(history_page, 'refresh'):
@@ -438,7 +428,7 @@ class ExcelImportPage(ctk.CTkFrame):
             btn_frame.pack(pady=10)
             tk.Button(btn_frame, text="Delete & Continue", font=("Arial", 11, "bold"), width=16, command=on_delete).pack(side="left", padx=8)
             tk.Button(btn_frame, text="Cancel", font=("Arial", 11), width=10, command=on_cancel).pack(side="left", padx=8)
-            return  # Do not proceed until user acts
+            return  
         # If under limit, save directly
         self._do_save_imported_table_to_history(data, headers, history_dir)
 
@@ -446,7 +436,6 @@ class ExcelImportPage(ctk.CTkFrame):
         import csv
         from datetime import datetime
         today = datetime.now().strftime("%Y%m%d")
-        # Find all files for today
         existing = [f for f in os.listdir(history_dir) if f.startswith(f"excelHistory_{today}_") and f.endswith('.csv')]
         ids = []
         for f in existing:
@@ -463,7 +452,6 @@ class ExcelImportPage(ctk.CTkFrame):
             if headers:
                 writer.writerow(headers)
             writer.writerows(data)
-        # Optionally, trigger history page refresh if needed
         if hasattr(self.controller, 'frames') and 'HistoryPage' in self.controller.frames:
             self.controller.frames['HistoryPage'].refresh()
 

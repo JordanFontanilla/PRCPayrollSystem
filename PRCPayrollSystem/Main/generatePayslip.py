@@ -19,7 +19,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
     def __init__(self, parent, controller=None):
         super().__init__(parent, fg_color="white")
         self.controller = controller
-        self.load_updated_fields()  # Load field adjustments on init
+        self.load_updated_fields()  
         self._build_ui()
 
     def load_updated_fields(self):
@@ -31,7 +31,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
         if os.path.exists(updated_fields_path):
             with open(updated_fields_path, 'r', encoding='utf-8') as f:
                 reader = csv.DictReader(f)
-                # Make fieldnames lowercase for robustness
+                # Make fieldnames lowercase for flexibility
                 reader.fieldnames = [field.strip().lower() for field in reader.fieldnames] if reader.fieldnames else []
                 for row in reader:
                     typ = row.get("type", "").strip().lower()
@@ -42,7 +42,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
                         custom_map[field] = cols
                         custom_types[field] = field_type
                     elif typ == "removed" and field:
-                        removed.add(field.upper()) # Always store removed as uppercase
+                        removed.add(field.upper()) #remove uppercase
         self._custom_field_map = custom_map
         self._custom_field_types = custom_types
         self._removed_default_fields = removed
@@ -77,7 +77,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
         # Right: Payslip form (scrollable)
         payslip_frame = ctk.CTkFrame(content, fg_color="white", border_width=0)
         payslip_frame.place(relx=0.21, rely=0.05, relwidth=0.78, relheight=0.9)
-        # Scrollable canvas (add horizontal scroll)
+        # Scrollable canvas 
         self.canvas = ctk.CTkCanvas(payslip_frame, bg="white", highlightthickness=0)
         v_scroll = ctk.CTkScrollbar(payslip_frame, orientation="vertical", command=self.canvas.yview)
         h_scroll = ctk.CTkScrollbar(payslip_frame, orientation="horizontal", command=self.canvas.xview)
@@ -105,7 +105,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
         self._draw_payslip()
 
     def _normalize_name(self, name):
-        # Convert to uppercase, remove punctuation/extra whitespace to create a consistent key.
+        # Convert to uppercase, remove punctuation/extra whitespace
         return re.sub(r'\s+', ' ', re.sub(r'[^\w\s]', '', str(name))).upper().strip()
 
     def _update_scrollregion(self):
@@ -117,7 +117,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
             self.canvas.configure(yscrollcommand=self._canvas.master.children['!ctkscrollbar'].set)
 
     def get_current_earning_and_deduction_fields(self):
-        # Returns (earning
+        # Returns (earning, deduction)
         removed = set(getattr(self, '_removed_default_fields', set()))
         default_earning_labels = [
             "Basic Salary", "PERA"
@@ -143,8 +143,8 @@ class GeneratePayslipPage(ctk.CTkFrame):
         return earning_labels, deduction_labels
 
     def _draw_payslip(self):
-        self.load_updated_fields()  # Always reload adjustments before drawing
-        # Clear all widgets from inner_frame to avoid artifacts when fields are removed/added
+        self.load_updated_fields()  
+        # Clear all widgets from inner_frame to avoid artifacts
         for widget in self.inner_frame.winfo_children():
             widget.destroy()
         # Logo and header
@@ -173,7 +173,6 @@ class GeneratePayslipPage(ctk.CTkFrame):
         # Table header
         ctk.CTkLabel(self.inner_frame, text="Earnings", font=("Arial", 12, "bold"), fg_color="#e6e6e6", anchor="center").grid(row=2, column=0, columnspan=2, sticky="nsew", padx=1, pady=1)
         ctk.CTkLabel(self.inner_frame, text="Deductions", font=("Arial", 12, "bold"), fg_color="#e6e6e6", anchor="center").grid(row=2, column=2, columnspan=2, sticky="nsew", padx=1, pady=1)
-        # Remove extra empty header columns for better alignment
         # Table columns
         ctk.CTkLabel(self.inner_frame, text="", fg_color="#e6e6e6").grid(row=2, column=3, columnspan=2, sticky="nsew", padx=1, pady=1)
         ctk.CTkLabel(self.inner_frame, text="", fg_color="#e6e6e6").grid(row=2, column=4, columnspan=2, sticky="nsew", padx=1, pady=1)
@@ -189,7 +188,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
         for i in range(max_rows):
             e_text = earning_labels[i]
             d_text = deduction_labels[i]
-            # Only create widgets for non-blank fields
+            # Only create widgets for not empty fields
             if e_text.strip():
                 ctk.CTkLabel(self.inner_frame, text=e_text, font=("Arial", 12), fg_color="white", anchor="w", width=160).grid(row=3+i, column=0, sticky="nsew", padx=1, pady=1)
                 ctk.CTkEntry(self.inner_frame, font=("Arial", 12), fg_color="white", border_width=0, corner_radius=0, width=120).grid(row=3+i, column=1, sticky="nsew", padx=1, pady=1)
@@ -197,7 +196,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
             if d_text.strip():
                 ctk.CTkLabel(self.inner_frame, text=d_text, font=("Arial", 12), fg_color="white", anchor="w", width=220).grid(row=3+i, column=2, sticky="nsew", padx=1, pady=1)
                 ctk.CTkEntry(self.inner_frame, font=("Arial", 12), fg_color="white", border_width=0, corner_radius=0, width=120).grid(row=3+i, column=3, sticky="nsew", padx=1, pady=1)
-        # Totals and netpay (as table rows)
+        # Totals and netpay 
         row_offset = 3 + max_rows
         ctk.CTkLabel(self.inner_frame, text="Total Earnings", font=("Arial", 12, "bold"), fg_color="white", anchor="w").grid(row=row_offset, column=0, sticky="w", padx=(10, 0), pady=(10, 0))
         ctk.CTkEntry(self.inner_frame, font=("Arial", 12), fg_color="white", border_width=0, corner_radius=0, width=120).grid(row=row_offset, column=1, sticky="w", padx=(0, 0), pady=(10, 0))
@@ -208,10 +207,9 @@ class GeneratePayslipPage(ctk.CTkFrame):
         ctk.CTkEntry(self.inner_frame, font=("Arial", 12), fg_color="white", border_width=0, corner_radius=0, width=120).grid(row=row_offset+1, column=1, sticky="w", padx=(0, 0), pady=(10, 0))
         ctk.CTkLabel(self.inner_frame, text="Netpay (2nd half)", font=("Arial", 12, "bold"), fg_color="white", anchor="w").grid(row=row_offset+1, column=2, sticky="w", padx=(10, 0), pady=(10, 0))
         ctk.CTkEntry(self.inner_frame, font=("Arial", 12), fg_color="white", border_width=0, corner_radius=0, width=120).grid(row=row_offset+1, column=3, sticky="w", padx=(0, 0), pady=(10, 0))
-        # ...existing code for adjust fields: apply the same border_width=0, corner_radius=0, fg_color="white" to all CTkEntry widgets...
 
     def set_employee_info(self, name, designation, salary_grade):
-        # Set the values in the payslip table entries for Name, Designation, Salary Grade
+        # Set the values 
         if hasattr(self, 'name_entry'):
             self.name_entry.delete(0, 'end')
             self.name_entry.insert(0, name)
@@ -242,7 +240,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
         # Lookup details from ImportEmployeePage table if available
         if hasattr(self.controller, 'frames') and 'ImportEmployeePage' in self.controller.frames:
             import_page = self.controller.frames['ImportEmployeePage']
-            # Find the row in the table corresponding to the selected index (skip header)
+            # Find the row in the table corresponding to the selected index 
             row_idx = idx + 1
             name = import_page.table.cells.get((row_idx, 0)).get() if import_page.table.cells.get((row_idx, 0)) else ''
             designation = import_page.table.cells.get((row_idx, 1)).get() if import_page.table.cells.get((row_idx, 1)) else ''
@@ -250,14 +248,14 @@ class GeneratePayslipPage(ctk.CTkFrame):
             self.set_employee_info(name, designation, salary_grade)
 
     def load_payslip_records(self):
-        # 1. Load master employee list from ImportEmployeePage (the single source of truth for employees)
+        # load master employee list
         master_names = []
         employee_details = {}
         if hasattr(self.controller, 'frames') and 'ImportEmployeePage' in self.controller.frames:
             import_page = self.controller.frames['ImportEmployeePage']
             table = getattr(import_page, 'table', None)
             if table:
-                # Assuming Name, Designation, Salary Grade are the first three columns
+                # Assume Name, Designation, Salary Grade 
                 for r in range(1, table.rows):  # Skip header
                     name_cell = table.cells.get((r, 0))
                     name = name_cell.get().strip() if name_cell and name_cell.get() else ''
@@ -269,9 +267,9 @@ class GeneratePayslipPage(ctk.CTkFrame):
                         salary_grade = salary_grade_cell.get().strip() if salary_grade_cell and salary_grade_cell.get() else ''
                         employee_details[name] = {'designation': designation, 'salary_grade': salary_grade}
         
-        self._employee_details = employee_details # Store for reuse
+        self._employee_details = employee_details 
 
-        # 2. Load payslip financial data from the imported Excel file into a temporary dictionary
+        # Load payslip financial data 
         raw_payslip_data = {}
         excel_table_loaded = False
         if hasattr(self.controller, 'frames') and 'ExcelImportPage' in self.controller.frames:
@@ -282,7 +280,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
                     excel_table_loaded = True
                     header_row = [str(h).strip() for h in table_data[0]]
                     name_idx = -1
-                    # Find name column index case-insensitively
+                    # Find name column index (case-insensitive)
                     for i, h in enumerate(header_row):
                         if h.strip().upper() in ("NAME", "EMPLOYEE NAME"):
                             name_idx = i
@@ -291,7 +289,6 @@ class GeneratePayslipPage(ctk.CTkFrame):
                          messagebox.showerror("Error", "Could not find 'Name' or 'Employee Name' column in the imported Excel file.")
                          return
 
-                    # Map payslip fields to their indices in Excel
                     field_map = {
                         "BASIC SALARY": ["SALARY", "MO.SALARY", "MONTHLY SALARY"],
                         "PERA": ["PERA"],
@@ -323,7 +320,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
                             for alias in aliases:
                                 if h_upper == alias.upper():
                                     field_indices[key] = i
-                    # --- Custom field index mapping ---
+                    # Custom field index mapping 
                     custom_map = getattr(self, '_custom_field_map', {})
                     custom_indices = {}
                     for field, excel_names in custom_map.items():
@@ -331,10 +328,10 @@ class GeneratePayslipPage(ctk.CTkFrame):
                         for col in excel_names:
                             col = col.strip()
                             if '-' in col:
-                                # Range, e.g. C-E or 2-5
+                                #ranges
                                 try:
                                     if col[0].isalpha():
-                                        # Letter range (Excel style)
+                                        # Letter range (Copying excel style)
                                         start, end = col.split('-')
                                         start_idx = ord(start.upper()) - ord('A')
                                         end_idx = ord(end.upper()) - ord('A')
@@ -360,7 +357,6 @@ class GeneratePayslipPage(ctk.CTkFrame):
                                         except Exception:
                                             pass
                         custom_indices[field] = indices
-                    # ---
                     for row in table_data[1:]:
                         excel_name = row[name_idx].strip() if name_idx is not None and len(row) > name_idx else ''
                         if excel_name:
@@ -379,7 +375,6 @@ class GeneratePayslipPage(ctk.CTkFrame):
                                 else:
                                     idx = field_indices.get(key)
                                     row_data[key] = row[idx] if idx is not None and len(row) > idx else ''
-                            # --- Custom fields value extraction ---
                             for field, indices in custom_indices.items():
                                 val_sum = 0.0
                                 has_value = False
@@ -396,7 +391,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
                                     row_data[field] = ''
                             raw_payslip_data[excel_name] = row_data
         
-        # 3. Reconcile financial data with master employee list.
+        # Then, match financial data with master employee list.
         final_payslip_data = {}
         # Create a map from a normalized excel name to its original data.
         raw_payslip_data_map = { self._normalize_name(name): data for name, data in raw_payslip_data.items() }
@@ -404,24 +399,23 @@ class GeneratePayslipPage(ctk.CTkFrame):
         for name in master_names:
             normalized_master_name = self._normalize_name(name)
             if normalized_master_name in raw_payslip_data_map:
-                # If a direct normalized match is found, use it.
+                # If a direct normalized match is found, use
                 final_payslip_data[name] = raw_payslip_data_map[normalized_master_name]
             else:
-                # If no financial data is found, the employee will have an empty payslip.
+                # If no financial data is found, empty
                 final_payslip_data[name] = {}
         
-        # 4. Update UI with reconciled data
+        # update UI
         self.set_employee_names(master_names)
         self._payslip_data = final_payslip_data
         self.emp_listbox.bind('<<ListboxSelect>>', self._on_payslip_record_select)
 
-        # Always load the first employee's payslip data if available
+        # Always load payslip data if available
         if master_names:
             self.emp_listbox.selection_clear(0, 'end')
             self.emp_listbox.selection_set(0)
             self.emp_listbox.activate(0)
-            self._draw_payslip()  # Redraw the payslip layout to reflect new/removed fields
-            # Get the first employee's info from our loaded details
+            self._draw_payslip()  
             name = master_names[0]
             details = self._employee_details.get(name, {})
             designation = details.get('designation', '')
@@ -448,7 +442,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
         # Lookup payslip data and fill payslip fields
         if hasattr(self, '_payslip_data') and name in self._payslip_data:
             self.fill_payslip_fields(self._payslip_data[name])
-        # Always update name, designation, and salary grade fields from stored details
+        # Always update name, designation, and salary grade fields 
         designation = ""
         salary_grade = ""
         if hasattr(self, '_employee_details') and name in self._employee_details:
@@ -459,8 +453,6 @@ class GeneratePayslipPage(ctk.CTkFrame):
 
     def fill_payslip_fields(self, row_data):
         # Only fill the payslip fields (salary to MPL) in the payslip document, do not touch designation or salary grade
-        # Map payslip fields to their row/column in the payslip layout
-        # Build dynamic field map for custom fields and removed fields
         removed = set(getattr(self, '_removed_default_fields', set()))
         custom_fields = list(getattr(self, '_custom_field_map', {}).keys())
         custom_types = getattr(self, '_custom_field_types', {})
@@ -499,7 +491,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
             for widget in self.inner_frame.winfo_children():
                 info = widget.grid_info()
                 if info.get('row') == row and info.get('column') == col and isinstance(widget, ctk.CTkEntry):
-                    # Format with commas for thousands if numeric
+                    # Format with commas for thousands
                     try:
                         v = float(value)
                         widget.insert(0, f"{v:,.2f}")
@@ -524,7 +516,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
             if info.get('row') == row_offset and info.get('column') == 3 and isinstance(widget, ctk.CTkEntry):
                 widget.delete(0, 'end')
                 widget.insert(0, f"{total_deductions:,.2f}" if total_deductions != 0 else '')
-        # Netpay fields (case-insensitive lookup)
+        # Netpay fields 
         row_data_ci = {str(k).strip().upper(): v for k, v in row_data.items()}
         netpay1 = row_data_ci.get("NETPAY (1ST HALF)", "")
         netpay2 = row_data_ci.get("NETPAY (2ND HALF)", "")
@@ -558,7 +550,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
         file_path = fd.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF files", "*.pdf")], title="Save Payslip as PDF")
         if not file_path:
             return
-        # --- Get selected employee robustly ---
+        # Get selected employee robustly 
         name = getattr(self, '_selected_employee', None)
         if not name and hasattr(self, 'emp_listbox'):
             selection = self.emp_listbox.curselection()
@@ -566,7 +558,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
                 idx = selection[0]
                 if hasattr(self, '_employee_names') and idx < len(self._employee_names):
                     name = self._employee_names[idx]
-        # --- Ensure payslip data is loaded ---
+        # Ensure payslip data is loaded 
         payslip_data = getattr(self, '_payslip_data', None)
         if payslip_data is None or not payslip_data:
             # Try to load payslip records if not loaded
@@ -584,9 +576,8 @@ class GeneratePayslipPage(ctk.CTkFrame):
         logo_x = margin
         logo_y = height - margin - logo_height + 10
         header_y = logo_y - 2
-        # --- Use the same field logic as the UI ---
         earning_labels, deduction_labels = self.get_current_earning_and_deduction_fields()
-        # --- Case-insensitive mapping for field lookups ---
+        # Case-insensitive mapping 
         row_data = payslip_data.get(name, {})
         row_data_ci = {str(k).strip().upper(): v for k, v in row_data.items()}
         earning_vals = [row_data_ci.get(label.strip().upper(), "0.00") if label.strip() else "" for label in earning_labels]
@@ -620,7 +611,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
         c.setFont("Helvetica", 12)
         c.drawString(margin, y, f"Name: {name}")
         y -= 16
-        # Always get designation and salary grade from stored details
+        # Always get designation and salary grade from the supposed details
         designation = ""
         salary_grade = ""
         if hasattr(self, '_employee_details') and name in self._employee_details:
@@ -633,8 +624,8 @@ class GeneratePayslipPage(ctk.CTkFrame):
         c.setFont("Helvetica-Bold", 12)
         c.drawString(margin, y, "Earnings")
         # Adjusted x-coordinates for better alignment
-        deductions_header_x = margin + 250  # Move header further right
-        deductions_value_x = margin + 470  # Move value further right
+        deductions_header_x = margin + 250  
+        deductions_value_x = margin + 470  
         c.drawString(deductions_header_x, y, "Deductions")
         y -= 8
         c.setStrokeColor(colors.black)
@@ -649,7 +640,6 @@ class GeneratePayslipPage(ctk.CTkFrame):
             d_label = deduction_labels_pad[i]
             d_val = deduction_vals_pad[i]
             def fmt_num(val, label=None):
-                # Only show 0.00 if the label is not blank
                 if label is not None and not label.strip():
                     return ""
                 try:
@@ -662,7 +652,6 @@ class GeneratePayslipPage(ctk.CTkFrame):
             c.drawString(deductions_header_x, y, d_label)
             c.drawRightString(deductions_value_x, y, fmt_num(d_val, d_label))
             y -= 14
-        # Update total/netpay lines to use comma formatting as well
         c.setFont("Helvetica-Bold", 11)
         c.drawString(margin, y, "Total Earnings:")
         c.drawRightString(margin+140, y, f"{total_earnings:,.2f}")
@@ -688,7 +677,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
         import os
         import tkinter as tk
         from tkinter import messagebox, filedialog as fd
-        self.load_updated_fields()  # Always reload adjustments before generating
+        self.load_updated_fields()  # Always reload adjustments before! generating (consistency)
         file_path = fd.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF files", "*.pdf")], title="Save All Payslips as PDF")
         if not file_path:
             return
@@ -736,7 +725,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
                     y = height - margin
                     header_y = y - 10
                 else:
-                    y = height - margin - payslip_height - 15*mm  # Lower the second payslip further
+                    y = height - margin - payslip_height - 15*mm  
                     header_y = y - 10
                 # Draw logo for each payslip
                 try:
@@ -756,7 +745,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
                 y -= 16
                 designation = ""
                 salary_grade = ""
-                # Always get designation and salary grade from stored details
+                # Always get designation and salary grade from supposed details
                 if hasattr(self, '_employee_details') and name in self._employee_details:
                     details = self._employee_details[name]
                     designation = details.get('designation', '')
@@ -767,8 +756,8 @@ class GeneratePayslipPage(ctk.CTkFrame):
                 c.setFont("Helvetica-Bold", 12)
                 c.drawString(margin, y, "Earnings")
                 # Adjusted x-coordinates for better alignment
-                deductions_header_x = margin + 250  # Move header further right
-                deductions_value_x = margin + 470   # Move value further right
+                deductions_header_x = margin + 250 
+                deductions_value_x = margin + 470   
                 c.drawString(deductions_header_x, y, "Deductions")
                 y -= 8
                 c.setStrokeColor(colors.black)
@@ -783,7 +772,6 @@ class GeneratePayslipPage(ctk.CTkFrame):
                     d_label = deduction_labels_pad[i]
                     d_val = deduction_vals_pad[i]
                     def fmt_num(val, label=None):
-                        # Only show 0.00 if the label is not blank
                         if label is not None and not label.strip():
                             return ""
                         try:
@@ -796,7 +784,6 @@ class GeneratePayslipPage(ctk.CTkFrame):
                     c.drawString(deductions_header_x, y, d_label)
                     c.drawRightString(deductions_value_x, y, fmt_num(d_val, d_label))
                     y -= 14
-                # Update total/netpay lines to use comma formatting as well
                 c.setFont("Helvetica-Bold", 11)
                 c.drawString(margin, y, "Total Earnings:")
                 c.drawRightString(margin+140, y, f"{total_earnings:,.2f}")
@@ -807,12 +794,11 @@ class GeneratePayslipPage(ctk.CTkFrame):
                 c.drawString(margin, y, f"Netpay (1st half): {fmt_num(netpay1)}")
                 y -= 16
                 c.drawString(margin, y, f"Netpay (2nd half): {fmt_num(netpay2)}")
-                # Draw footer only for the last payslip on the page or last payslip overall
                 if payslip_num == 1 or (idx + payslip_num == len(names) - 1):
                     c.setFont("Helvetica-Oblique", 9)
                     c.setFillColor(colors.grey)
                     c.drawString(margin, 30, f"Generated by PRC Payroll System - v1.0")
-                c.setFillColor(colors.black)  # Reset color for next payslip
+                c.setFillColor(colors.black)  
             if idx + 2 < len(names):
                 c.showPage()  # New page for next two payslips
         c.save()
@@ -827,7 +813,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
             shutil.copy(file_path, dest_path)
         except Exception as e:
             print(f"Failed to save all payslips copy: {e}")
-        # After saving the PDFs, refresh the HistoryPage PDF list
+        # After saving the PDFs, refresh!
         if self.controller:
             history_page = self.controller.get_page('HistoryPage')
             if history_page:
@@ -852,7 +838,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
         custom_map = getattr(self, '_custom_field_map', {})
         custom_types = getattr(self, '_custom_field_types', {})
         removed = getattr(self, '_removed_default_fields', set())
-        # Save to updatedFields.csv (for UI logic)
+        # Save to updatedFields.csv
         with open(updated_fields_path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow(["Type", "Field", "Columns", "FieldType"])
@@ -861,10 +847,10 @@ class GeneratePayslipPage(ctk.CTkFrame):
                 writer.writerow(["custom", field, ','.join(cols), field_type])
             for field in removed:
                 writer.writerow(["removed", field, "", ""])
-        # Save to payslipSettings.csv (for persistent config)
-        # Compose the current field list (order, type, excel columns)
+        # Save
+        # Compose the current field list 
         earning_labels, deduction_labels = self.get_current_earning_and_deduction_fields()
-        # Build a list of tuples: (Field, Type, Columns)
+        # Build a list of tuples (might be better than reusing)
         field_rows = []
         for field in earning_labels:
             if field in custom_map:
@@ -965,7 +951,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
                 # Remove from default fields by tracking removed fields
                 if not hasattr(self, '_removed_default_fields'):
                     self._removed_default_fields = set()
-                self._removed_default_fields.add(field.upper()) # Store as upper to match check
+                self._removed_default_fields.add(field.upper())
             # After removal, immediately update CSV to reflect only current fields
             self.save_updated_fields()
             if hasattr(self, 'load_payslip_records'):

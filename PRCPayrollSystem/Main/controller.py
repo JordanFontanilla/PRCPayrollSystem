@@ -11,7 +11,7 @@ class AppController(ctk.CTk):
         self.title("Payroll System")
         self.geometry("950x600")
         self.frames = {}
-        from PRCPayrollSystem.Main.Main import MainMenu  # Import here to avoid circular import
+        from PRCPayrollSystem.Main.Main import MainMenu  #To avoid circular problem(BEST SOLUTION)
         for F in (MainMenu, ExcelImportPage, ImportEmployeePage, ReportsPage, GeneratePayslipPage, HistoryPage):
             frame = F(self, self)
             self.frames[F.__name__] = frame

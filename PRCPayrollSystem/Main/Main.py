@@ -82,7 +82,7 @@ class MainMenu(ctk.CTkFrame):
     def exit_app(self):
         self.controller.destroy()
 
-#for the application starter 
+#starterr (main)
 if __name__ == "__main__":
     app = AppController()
     app.mainloop()

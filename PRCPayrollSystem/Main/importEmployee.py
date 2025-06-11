@@ -138,13 +138,13 @@ class ImportEmployeePage(ctk.CTkFrame):
 
     def _update_scrollregion(self):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-        # Hide vertical scrollbar if not needed
+        # Hide vertical scrollbar 
         if self.canvas.bbox("all") and self.canvas.winfo_height() >= self.canvas.bbox("all")[3]:
             self.canvas.yview_moveto(0)
             self.canvas.configure(yscrollcommand=lambda *args: None)
         else:
             self.canvas.configure(yscrollcommand=self._canvas.master.children['!ctkscrollbar'].set)
-        # Hide horizontal scrollbar if not needed
+        # Hide horizontal scrollbar 
         if self.canvas.bbox("all") and self.canvas.winfo_width() >= self.canvas.bbox("all")[2]:
             self.canvas.xview_moveto(0)
             self.canvas.configure(xscrollcommand=lambda *args: None)
@@ -245,7 +245,7 @@ class ImportEmployeePage(ctk.CTkFrame):
                         entry.insert(0, str(value))
 
     def save_employees(self):
-        # Save the employee table data to a dedicated CSV file in the project directory
+        # Save the employee table data CSV file in past playslips 
         import os
         file_path = resource_path("settingsAndFields/employee_records.csv")
         # Gather data from the table

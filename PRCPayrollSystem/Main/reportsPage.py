@@ -100,6 +100,8 @@ class ReportsPage(ctk.CTkFrame):
         self.canvas.bind_all("<Shift-MouseWheel>", _on_shift_mousewheel)
         self._canvas = self.canvas
 
+        # Notice 
+        ctk.CTkLabel(self, text="Always double check deduction settings", font=("Arial", 18), text_color="gray").pack(pady=(0, 5))
     def _draw_table(self):
         for widget in self.inner.winfo_children():
             widget.destroy()
@@ -217,11 +219,6 @@ class ReportsPage(ctk.CTkFrame):
 
     #Data aggregation (unsure)
     def set_aggregated_data(self, headers, data):
-        """
-        Set the table headers and data to the provided aggregated results and redraw the table.
-        headers: list of str
-        data: list of lists (rows)
-        """
         self.headers = headers[:self.cols] + ["" for _ in range(self.cols - len(headers))]
         self.data = [row[:self.cols] + ["" for _ in range(self.cols - len(row))] for row in data[:self.rows-1]]
         while len(self.data) < self.rows-1:
@@ -300,7 +297,7 @@ class ReportsPage(ctk.CTkFrame):
                 error_label.config(text="Please select at least one column.")
                 return
             self._selected_other_deduction_cols = selected
-            # Update: deductionSettings.csv is now in settingsAndFields directory
+            # refactor Update: deductionSettings.csv is now in settingsAndFields directory for clarity
             settings_path = resource_path("settingsAndFields/deductionSettings.csv")
             colnames = []
             if hasattr(self.controller, 'frames') and 'ExcelImportPage' in self.controller.frames:
@@ -313,7 +310,7 @@ class ReportsPage(ctk.CTkFrame):
                                 col_name = widget.get().strip()
                                 if col_name:
                                     colnames.append(col_name)
-            # Auto overwrite the file with only UAC lines and the new DEDCOLS line
+            # Auto overwrite UAC lines and the new DEDCOLS line
             lines = []
             if os.path.exists(settings_path):
                 with open(settings_path, 'r', encoding='utf-8') as f:
@@ -429,8 +426,7 @@ class ReportsPage(ctk.CTkFrame):
             prev_count = len(self.default_row_headers)
             new_count = len(uac_codes)
             self.default_row_headers = list(uac_codes)
-            # Path to save settings (unsure)
-            # Update: deductionSettings.csv is now in settingsAndFields directory
+            # Updated: deductionSettings.csv is now in settingsAndFields directory for clarity
             settings_path = resource_path("settingsAndFields/deductionSettings.csv")
             # Read existing lines to preserve DEDCOLS if present
             dedcols_line = None
@@ -439,7 +435,7 @@ class ReportsPage(ctk.CTkFrame):
                     for line in f:
                         if line.startswith("DEDCOLS:"):
                             dedcols_line = line.rstrip('\n')
-            # Write UAC codes and preserve DEDCOLS line if present
+            # Write UAC codes and preserve DEDCOLS line IFFFF present
             with open(settings_path, 'w', encoding='utf-8', newline='') as f:
                 for code in uac_codes:
                     f.write(f"UAC:{code}\n")
@@ -456,15 +452,11 @@ class ReportsPage(ctk.CTkFrame):
         tk.Button(btns_frame, text="Cancel", font=("Arial", 11), width=10, command=popup.destroy).pack(side="left", padx=8)
 
     def refresh_aggregation(self):
-        # If excel data is available in controller, re-aggregate and redraw
+        # If excel data is available in controller, rewaggregate and redraw
         if hasattr(self.controller, 'excel_data'):
             self.set_excel_aggregated(self.controller.excel_data)
 
     def _aggregate_excel_data(self, excel_data):
-        """
-        Aggregates excelImport data by PAP/UAC CODE, summing all numeric columns for each code.
-        Returns a dict: {pap_code: [mo_salary, pera, gsis, phic, hdmf, other_deductions]}
-        """
         from collections import defaultdict
         agg = defaultdict(lambda: [0, 0, 0, 0, 0, 0])
         # unsure, but this is for the default J - U columns (maybe lang)
@@ -550,11 +542,10 @@ class ReportsPage(ctk.CTkFrame):
         return agg
 
     def set_excel_aggregated(self, excel_data):
-        """
-        Combines all PAP/UAC CODE rows in excelImport and sets the aggregated data in the report table.
-        Only rows matching the default_row_headers are shown, in the order of default_row_headers.
-        """
-        # --- NEW LOGIC: check if excel_data headers/cols match saved settings ---
+        
+        #Combines all pap/UAC code rows in excelImport and sets the aggregated data in the report table.
+        #Only rows matching the default_row_headers are available (best results that I found).
+        # ALSO checks if the excel_data headers/cols match save settings
         headers = []
         if excel_data and all(isinstance(x, str) for x in excel_data[0]):
             headers = [h.strip() for h in excel_data[0]]
@@ -565,10 +556,9 @@ class ReportsPage(ctk.CTkFrame):
             if len(self._deduction_colnames_saved) == len(headers):
                 match = all(a == b for a, b in zip(self._deduction_colnames_saved, headers))
         if not match:
-            # Reset to default deduction columns if structure does not match
-            self._selected_other_deduction_cols = list(range(9, 21))  # J (9) to U (20) inclusive
+            # Reset to default deduction columns if structure is a mismatch
+            self._selected_other_deduction_cols = list(range(9, 21))  # J (9) to U (20) inclusive again
             self._deduction_colnames_saved = headers
-            # Optionally, notify user here (e.g., popup or print)
         agg = self._aggregate_excel_data(excel_data)
         headers_out = self.default_col_headers[:1] + ["MO.SALARY", "PERA AMOUNT", "GSIS", "PHIC", "HDMF", "OTHER DEDUCTIONS"]
         data = []
@@ -576,7 +566,7 @@ class ReportsPage(ctk.CTkFrame):
             vals = agg.get(pap, [0,0,0,0,0,0])
             row = [f"{v:.2f}" for v in vals]
             data.append(row)
-        # Pad/truncate to fit table size
+        # Padding to fit table size (unsure how this works, was generated by AI)
         while len(data) < self.rows-1:
             data.append([""] * 6)
         data = data[:self.rows-1]

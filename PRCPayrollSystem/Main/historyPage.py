@@ -9,7 +9,7 @@ class HistoryPage(ctk.CTkFrame):
     def __init__(self, parent, controller=None):
         super().__init__(parent, fg_color="white")
         self.controller = controller
-        self._loading_summary = False  # Flag to prevent re-entrant selection
+        self._loading_summary = False  # to prevent re-entrant selection if empty it somehow does not work
         self.history_dir = resource_path("pastLoadedHistory")
         # Directory for payslip PDFs
         self.payslip_dir = resource_path("pastPayslips")
@@ -32,7 +32,7 @@ class HistoryPage(ctk.CTkFrame):
         self._delete_btn = ctk.CTkButton(topbar, text="Delete", text_color="white", fg_color="#d0021b", hover_color="#a30010", state="normal", command=self.toggle_delete_mode)
         self._delete_btn.pack(side=ctk.RIGHT, padx=(0, 8), pady=8)
 
-        # --- Modern, organized file list UI with its own scrollbar ---
+        # Filelist for UI scrollbar
         listbox_frame = ctk.CTkFrame(self, fg_color="#f3f6fa", border_width=1, border_color="#dbeafe", corner_radius=12)
         listbox_frame.pack(fill=ctk.BOTH, expand=True, padx=16, pady=(10, 0))
         ctk.CTkLabel(listbox_frame, text="History Files", font=("Montserrat", 16, "bold"), text_color="#0a47b1").grid(row=0, column=0, sticky="w", padx=12, pady=(8, 0))
@@ -42,9 +42,9 @@ class HistoryPage(ctk.CTkFrame):
         listbox_container.grid(row=1, column=0, sticky="nsew", padx=8, pady=(0, 8))
         listbox_scrollbar = ctk.CTkScrollbar(listbox_container, orientation="vertical")
         listbox_scrollbar.pack(side=ctk.RIGHT, fill=ctk.Y)
-        # Set explicit width for the listbox container to match the delete mode canvas width
+        # Set explicit width for the listbox (FOR MTACHING)
         listbox_container.update_idletasks()
-        default_width = 600  # Adjust this value to match the delete mode canvas visually
+        default_width = 600  # For visually matching (sometimes does not match if other value)
         listbox_container.configure(width=default_width)
         self.listbox = tk.Listbox(listbox_container, font=("Consolas", 13), height=12, activestyle='none', bg="#f8fbff", fg="#0a47b1", highlightthickness=0, bd=0, relief="flat", selectbackground="#dbeafe", selectforeground="#0a47b1", borderwidth=0, yscrollcommand=listbox_scrollbar.set)
         self.listbox.pack(side=ctk.LEFT, fill=ctk.BOTH, expand=True)
@@ -63,7 +63,7 @@ class HistoryPage(ctk.CTkFrame):
         payslip_scrollbar.configure(command=self.payslip_listbox.yview)
         self.payslip_listbox.bind('<<ListboxSelect>>', self.on_payslip_select)
         self.payslip_listbox.bind('<Double-Button-1>', self.on_payslip_double_click)
-        # Add a subtle border and rounded corners to the listboxes using the frame
+        # border and rounded corners
         listbox_frame.grid_columnconfigure(0, weight=1)
         listbox_frame.grid_columnconfigure(1, weight=1)
         self.summary_frame = ctk.CTkFrame(self, fg_color="white")
@@ -79,10 +79,10 @@ class HistoryPage(ctk.CTkFrame):
         files = sorted(files, reverse=True)
         for i, fname in enumerate(files):
             self.history_files.append(fname)
-            # Add index and date for clarity
+            # index date and id to be able to distinguish
             display_name = f"{i+1:02d}.  {fname}"
             self.listbox.insert(tk.END, display_name)
-        # If no files, show a placeholder
+        # If no files, show dummy 
         if not files:
             self.listbox.insert(tk.END, "No history files found.")
             self.listbox.configure(state="disabled")
@@ -111,7 +111,6 @@ class HistoryPage(ctk.CTkFrame):
             self.payslip_listbox.configure(state="normal")
 
     def on_select(self, event):
-        # Disable old single-file delete logic; only enable Open Full Table
         selection = event.widget.curselection()
         if not selection or not self.history_files:
             self._open_full_table_btn.configure(state="disabled", command=lambda: None)
@@ -124,10 +123,9 @@ class HistoryPage(ctk.CTkFrame):
         self.show_history_summary(fname)
         fpath = os.path.join(self.history_dir, fname)
         self._open_full_table_btn.configure(state="normal", command=lambda: self.open_full_table(fpath, fname))
-        # Do not enable delete button for single selection
 
     def on_payslip_select(self, event):
-        # Disable old single-file delete logic for payslips
+        #removerd
         return
 
     def confirm_delete_file(self, fpath, fname, is_pdf=False):
@@ -177,7 +175,7 @@ class HistoryPage(ctk.CTkFrame):
                 table_frame = tk.Frame(canvas, bg="white")
                 table_window = canvas.create_window((0, 0), window=table_frame, anchor="nw")
 
-                # --- Table content ---
+                # TABLE
                 header_font = ("Arial", 10, "bold")
                 cell_font = ("Arial", 10)
                 # Title
@@ -199,7 +197,7 @@ class HistoryPage(ctk.CTkFrame):
                         lbl = tk.Label(table_frame, text="", font=cell_font, bg="white", padx=8, pady=4, borderwidth=1, relief="solid")
                         lbl.grid(row=2 + r, column=c, sticky="nsew", padx=1, pady=1)
 
-                # --- Update scrollregion on table_frame resize ---
+                # SCROLL REGION
                 def _update_scrollregion(event=None):
                     canvas.configure(scrollregion=canvas.bbox("all"))
                     # Only set the window width if the table is smaller than the canvas
@@ -214,9 +212,9 @@ class HistoryPage(ctk.CTkFrame):
                 table_frame.bind("<Configure>", _update_scrollregion)
                 canvas.bind("<Configure>", _update_scrollregion)
 
-                # Mousewheel scrolling (vertical and horizontal)
+                # Mousewheel scrolling 
                 def _on_mousewheel(event):
-                    if event.state & 0x1:  # Shift is held for horizontal scroll
+                    if event.state & 0x1:  
                         canvas.xview_scroll(int(-1 * (event.delta / 120)), "units")
                     else:
                         canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
@@ -226,7 +224,6 @@ class HistoryPage(ctk.CTkFrame):
             ctk.CTkLabel(self.summary_frame, text=f"Error loading file: {e}").pack()
 
     def on_payslip_double_click(self, event):
-        # Still allow opening the PDF externally
         selection = event.widget.curselection()
         if not selection or not self.payslip_files:
             return
@@ -260,9 +257,9 @@ class HistoryPage(ctk.CTkFrame):
             self.controller.show_frame('ExcelImportPage')
 
     def refresh(self):
-        # Reload the file list and also clear and reload the payslip list
+        # To reload the file list and also clear and reload the payslip list
         self.load_history_files()
-        # Optionally, clear the summary frame to avoid showing stale previews or summaries
+        # clear the summary frame to avoid showing stale previews or summaries
         for widget in self.summary_frame.winfo_children():
             widget.destroy()
 
@@ -278,17 +275,15 @@ class HistoryPage(ctk.CTkFrame):
             self.hide_delete_checkboxes()
 
     def show_delete_checkboxes(self):
-        # Hide original listboxes
         self.listbox.pack_forget()
         self.payslip_listbox.pack_forget()
-        # Get the current size of the listbox widgets themselves (not the container)
         self.listbox.update_idletasks()
         self.payslip_listbox.update_idletasks()
         listbox_width = self.listbox.winfo_width()
         listbox_height = self.listbox.winfo_height()
         payslip_width = self.payslip_listbox.winfo_width()
         payslip_height = self.payslip_listbox.winfo_height()
-        # --- History Files with checkboxes ---
+        # Checkboxes
         self._history_canvas = tk.Canvas(self.listbox.master, bg="#f8fbff", highlightthickness=0,
                                          width=listbox_width, height=listbox_height)
         self._history_canvas.pack(side=ctk.LEFT, fill=ctk.BOTH, expand=True)
@@ -300,7 +295,7 @@ class HistoryPage(ctk.CTkFrame):
         for i, fname in enumerate(self.history_files):
             var = tk.BooleanVar()
             row = tk.Frame(self._history_frame, bg="#f8fbff")
-            # Set a fixed width for the label so the row width matches the listbox, accounting for the checkbox
+            # Fixed width (working)
             label = tk.Label(row, text=f"{i+1:02d}.  {fname}", font=("Consolas", 13), bg="#f8fbff", fg="#0a47b1", anchor="w", width=max(1, int(listbox_width/9)-4))
             label.pack(side=tk.LEFT, fill=tk.X, expand=True)
             cb = tk.Checkbutton(row, variable=var, bg="#f8fbff")
@@ -312,7 +307,7 @@ class HistoryPage(ctk.CTkFrame):
         def _on_history_frame_configure(event):
             self._history_canvas.config(scrollregion=self._history_canvas.bbox("all"))
         self._history_frame.bind("<Configure>", _on_history_frame_configure)
-        # --- Payslip PDFs with checkboxes ---
+        # checkbox for pdf
         self._payslip_canvas = tk.Canvas(self.payslip_listbox.master, bg="#f8fbff", highlightthickness=0,
                                          width=payslip_width, height=payslip_height)
         self._payslip_canvas.pack(side=ctk.LEFT, fill=ctk.BOTH, expand=True)
@@ -335,7 +330,6 @@ class HistoryPage(ctk.CTkFrame):
         def _on_payslip_frame_configure(event):
             self._payslip_canvas.config(scrollregion=self._payslip_canvas.bbox("all"))
         self._payslip_frame.bind("<Configure>", _on_payslip_frame_configure)
-        # Prevent the canvas from resizing to its contents
         self._history_canvas.pack_propagate(False)
         self._payslip_canvas.pack_propagate(False)
 
@@ -347,7 +341,6 @@ class HistoryPage(ctk.CTkFrame):
         if hasattr(self, '_payslip_canvas'):
             self._payslip_canvas.pack_forget()
             self._payslip_canvas.destroy()
-        # Restore the original scrollbar commands to the listboxes
         self.listbox.master.children['!ctkscrollbar'].configure(command=self.listbox.yview)
         self.listbox.configure(yscrollcommand=self.listbox.master.children['!ctkscrollbar'].set)
         self.payslip_listbox.master.children['!ctkscrollbar'].configure(command=self.payslip_listbox.yview)
