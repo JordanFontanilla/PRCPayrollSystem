@@ -12,7 +12,7 @@ class ExcelImportPage(ctk.CTkFrame):
         self.rows = 8  # 7 data + 1 header
         self.cols = 11
         # Directory to save history files (always under app folder)
-        self.history_dir = resource_path("PRCPayrollSystem/pastLoadedHistory")
+        self.history_dir = resource_path("pastLoadedHistory")
         self._build_ui()
 
     def _build_ui(self):

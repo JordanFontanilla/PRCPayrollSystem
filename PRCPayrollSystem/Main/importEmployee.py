@@ -247,7 +247,7 @@ class ImportEmployeePage(ctk.CTkFrame):
     def save_employees(self):
         # Save the employee table data to a dedicated CSV file in the project directory
         import os
-        file_path = resource_path("PRCPayrollSystem/settingsAndFields/employee_records.csv")
+        file_path = resource_path("settingsAndFields/employee_records.csv")
         # Gather data from the table
         data = []
         for r in range(self.table.rows):
@@ -269,7 +269,7 @@ class ImportEmployeePage(ctk.CTkFrame):
     def _load_default_employee_csv(self):
         import os
         import csv
-        file_path = resource_path("PRCPayrollSystem/settingsAndFields/employee_records.csv")
+        file_path = resource_path("settingsAndFields/employee_records.csv")
         if os.path.exists(file_path):
             with open(file_path, 'r', encoding='utf-8') as f:
                 reader = list(csv.reader(f))

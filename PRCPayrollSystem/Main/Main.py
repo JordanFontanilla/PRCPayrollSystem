@@ -4,6 +4,7 @@ import tkinter as tk
 import os
 from PRCPayrollSystem.Main.excelImportPage import ExcelImportPage
 from PRCPayrollSystem.Main.controller import AppController
+from PRCPayrollSystem.Main.resource_utils import resource_path
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
@@ -44,7 +45,7 @@ class MainMenu(ctk.CTkFrame):
         self.configure(fg_color="white")
         self.gradient = GradientFrame(self, color1="#ffffff", color2="#b3d1fa")
         self.gradient.pack(fill="both", expand=True)
-        logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Components", "PRClogo.png")
+        logo_path = resource_path("Components/PRClogo.png")
         logo_img = Image.open(logo_path).resize((100, 100), Image.LANCZOS)
         self.logo = ImageTk.PhotoImage(logo_img)
         self.logo_label = tk.Label(self.gradient.canvas, image=self.logo, bg="white", borderwidth=0)

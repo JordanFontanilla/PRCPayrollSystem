@@ -10,9 +10,9 @@ class HistoryPage(ctk.CTkFrame):
         super().__init__(parent, fg_color="white")
         self.controller = controller
         self._loading_summary = False  # Flag to prevent re-entrant selection
-        self.history_dir = resource_path("PRCPayrollSystem/pastLoadedHistory")
+        self.history_dir = resource_path("pastLoadedHistory")
         # Directory for payslip PDFs
-        self.payslip_dir = resource_path("PRCPayrollSystem/pastPayslips")
+        self.payslip_dir = resource_path("pastPayslips")
         self._build_ui()
         self.load_history_files()
 

@@ -24,7 +24,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
 
     def load_updated_fields(self):
         """Load custom and removed fields from updatedFields.csv and apply to the payslip config."""
-        updated_fields_path = resource_path("PRCPayrollSystem/settingsAndFields/updatedFields.csv")
+        updated_fields_path = resource_path("settingsAndFields/updatedFields.csv")
         custom_map = {}
         custom_types = {}
         removed = set()
@@ -151,7 +151,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
         logo_path = None
         try:
             import os
-            logo_path = resource_path("PRCPayrollSystem/Components/PRClogo.png")
+            logo_path = resource_path("Components/PRClogo.png")
             logo_img = Image.open(logo_path).resize((60, 60), Image.LANCZOS)
             self.logo = ImageTk.PhotoImage(logo_img)
             logo_label = tk.Label(self.inner_frame, image=self.logo, bg="white", borderwidth=0)
@@ -608,7 +608,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
         netpay2 = row_data_ci.get("NETPAY (2ND HALF)", "")
         y = height - margin
         try:
-            logo_path = resource_path("PRCPayrollSystem/Components/PRClogo.png")
+            logo_path = resource_path("Components/PRClogo.png")
             c.drawImage(ImageReader(logo_path), logo_x, logo_y, logo_width, logo_height, mask='auto')
         except Exception:
             pass
@@ -740,7 +740,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
                     header_y = y - 10
                 # Draw logo for each payslip
                 try:
-                    logo_path = resource_path("PRCPayrollSystem/Components/PRClogo.png")
+                    logo_path = resource_path("Components/PRClogo.png")
                     c.drawImage(ImageReader(logo_path), logo_x, header_y + 10, logo_width, logo_height, mask='auto')
                 except Exception:
                     pass
@@ -819,7 +819,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
         messagebox.showinfo("PDF Saved", f"All payslips PDF saved to:\n{file_path}")
         # Save a copy in pastPayslips folder
         try:
-            past_payslips_dir = resource_path("PRCPayrollSystem/pastPayslips")
+            past_payslips_dir = resource_path("pastPayslips")
             if not os.path.exists(past_payslips_dir):
                 os.makedirs(past_payslips_dir)
             dt_str = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -847,8 +847,8 @@ class GeneratePayslipPage(ctk.CTkFrame):
 
     def save_updated_fields(self):
         """Save custom and removed fields to updatedFields.csv and update payslipSettings.csv."""
-        updated_fields_path = resource_path("PRCPayrollSystem/settingsAndFields/updatedFields.csv")
-        payslip_settings_path = resource_path("PRCPayrollSystem/settingsAndFields/payslipSettings.csv")
+        updated_fields_path = resource_path("settingsAndFields/updatedFields.csv")
+        payslip_settings_path = resource_path("settingsAndFields/payslipSettings.csv")
         custom_map = getattr(self, '_custom_field_map', {})
         custom_types = getattr(self, '_custom_field_types', {})
         removed = getattr(self, '_removed_default_fields', set())
