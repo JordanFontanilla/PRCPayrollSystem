@@ -1,5 +1,5 @@
 PRC Payroll System Generator
-				    River Jordan Fontanilla 
+				        River Jordan Fontanilla 
 			              University of the Cordillera 
 Introduction
 The PRC Payroll System Generator was developed through the coordination of Ma’am Jovy Anongos to help the tedious tasks of payrolls. The problem was that there are processes in giving payrolls that were repetitive and difficult once there are changes. It was also expressed that the specific features were also desired to overall help with the accessibility and convenience. When designing, the developer followed the specifications of Ma’am Anongos citing the flow and structure of the process. The developer then researched existing payroll system to try and understand the process along with the given specifications. Upon understanding the process and functions of a payroll system, the developer then proceeded to start the design and plan for the system.
