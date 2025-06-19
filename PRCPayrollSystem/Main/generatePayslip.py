@@ -323,39 +323,57 @@ class GeneratePayslipPage(ctk.CTkFrame):
                     # Custom field index mapping 
                     custom_map = getattr(self, '_custom_field_map', {})
                     custom_indices = {}
+
+                    def excel_col_to_index(s):
+                        """Converts an Excel-style column name (A, B, ..., Z, AA, AB, ...) to a zero-based index."""
+                        s = s.strip().upper()
+                        result = 0
+                        for char in s:
+                            if not 'A' <= char <= 'Z':
+                                return -1 # Invalid character
+                            result = result * 26 + (ord(char) - ord('A') + 1)
+                        return result - 1
+
                     for field, excel_names in custom_map.items():
                         indices = []
                         for col in excel_names:
                             col = col.strip()
                             if '-' in col:
-                                #ranges
+                                # Handle ranges like "A-C" or "1-3"
                                 try:
-                                    if col[0].isalpha():
-                                        # Letter range (Copying excel style)
-                                        start, end = col.split('-')
-                                        start_idx = ord(start.upper()) - ord('A')
-                                        end_idx = ord(end.upper()) - ord('A')
-                                        indices.extend(list(range(start_idx, end_idx+1)))
-                                    else:
-                                        # Numeric range
-                                        start, end = map(int, col.split('-'))
-                                        indices.extend(list(range(start-1, end)))
+                                    start_str, end_str = [c.strip() for c in col.split('-')]
+                                    # Check if it's a letter-based range (e.g., "J-U", "A-AA")
+                                    if start_str.isalpha() and end_str.isalpha():
+                                        start_idx = excel_col_to_index(start_str)
+                                        end_idx = excel_col_to_index(end_str)
+                                        if start_idx >= 0 and end_idx >= 0 and start_idx <= end_idx:
+                                            indices.extend(list(range(start_idx, end_idx + 1)))
+                                    # Check if it's a number-based range (e.g., "10-21")
+                                    elif start_str.isdigit() and end_str.isdigit():
+                                        start, end = int(start_str), int(end_str)
+                                        indices.extend(list(range(start - 1, end))) # Assuming 1-based from UI
                                 except Exception:
-                                    continue
+                                    continue # Skip malformed ranges
                             else:
-                                # Try to match by header name first
+                                # Handle single column identifiers
+                                # 1. Try to match by header name first (e.g., "SALARY")
                                 try:
                                     idx = header_row.index(col)
                                     indices.append(idx)
                                 except ValueError:
-                                    # Try as column letter
-                                    if col.isalpha() and len(col) == 1:
-                                        indices.append(ord(col.upper()) - ord('A'))
+                                    # 2. Try as an Excel column letter (e.g., "J", "AA")
+                                    if col.isalpha():
+                                        idx = excel_col_to_index(col)
+                                        if idx >= 0:
+                                            indices.append(idx)
                                     else:
+                                        # 3. Try as a 1-based numeric index (e.g., "10")
                                         try:
-                                            indices.append(int(col)-1)
-                                        except Exception:
-                                            pass
+                                            idx = int(col) - 1
+                                            if idx >= 0:
+                                                indices.append(idx)
+                                        except (ValueError, TypeError):
+                                            pass # Skip if not a valid number
                         custom_indices[field] = indices
                     for row in table_data[1:]:
                         excel_name = row[name_idx].strip() if name_idx is not None and len(row) > name_idx else ''
