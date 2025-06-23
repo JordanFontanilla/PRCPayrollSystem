@@ -144,6 +144,11 @@ class GeneratePayslipPage(ctk.CTkFrame):
 
     def _draw_payslip(self):
         self.load_updated_fields()  
+        # Save current pay period value if entry exists
+        if hasattr(self, 'payslip_date_entry'):
+            self._pay_period_value = self.payslip_date_entry.get()
+        else:
+            self._pay_period_value = getattr(self, '_pay_period_value', "")
         # Clear all widgets from inner_frame to avoid artifacts
         for widget in self.inner_frame.winfo_children():
             widget.destroy()
@@ -159,25 +164,36 @@ class GeneratePayslipPage(ctk.CTkFrame):
         except Exception:
             pass
         ctk.CTkLabel(self.inner_frame, text="Professional Regulation Commission\nCordillera Administrative Region", font=("Arial", 15, "bold"), text_color="#222", fg_color="white").grid(row=0, column=1, columnspan=6, pady=(10, 0), sticky="w")
+
+        # Date of Payslip
+        ctk.CTkLabel(self.inner_frame, text="Pay Period:", font=("Arial", 12, "bold"), fg_color="white", anchor="w").grid(row=1, column=0, sticky="nsew", padx=2, pady=2)
+        self.payslip_date_entry = ctk.CTkEntry(self.inner_frame, font=("Arial", 12), fg_color="white", border_width=0, corner_radius=0, width=120, placeholder_text="e.g. June 6, 2025")
+        self.payslip_date_entry.grid(row=1, column=1, sticky="nsew", padx=2, pady=2)
+        # Restore previous value
+        if getattr(self, '_pay_period_value', ""):
+            self.payslip_date_entry.insert(0, self._pay_period_value)
+        # Keep self
+        def on_pay_period_change(event=None):
+            self._pay_period_value = self.payslip_date_entry.get()
+        self.payslip_date_entry.bind('<KeyRelease>', on_pay_period_change)
+
         # Name/Designation/Salary Grade
-        ctk.CTkLabel(self.inner_frame, text="Name", font=("Arial", 12, "bold"), fg_color="white", anchor="w").grid(row=1, column=0, sticky="nsew", padx=2, pady=2)
+        ctk.CTkLabel(self.inner_frame, text="Name", font=("Arial", 12, "bold"), fg_color="white", anchor="w").grid(row=2, column=0, sticky="nsew", padx=2, pady=2)
         self.name_entry = ctk.CTkEntry(self.inner_frame, font=("Arial", 12), fg_color="white", border_width=0, corner_radius=0, width=120)
-        self.name_entry.grid(row=1, column=1, sticky="nsew", padx=2, pady=2)
-        ctk.CTkLabel(self.inner_frame, text="Designation", font=("Arial", 12, "bold"), fg_color="white", anchor="w").grid(row=1, column=2, sticky="nsew", padx=2, pady=2)
+        self.name_entry.grid(row=2, column=1, sticky="nsew", padx=2, pady=2)
+        ctk.CTkLabel(self.inner_frame, text="Designation", font=("Arial", 12, "bold"), fg_color="white", anchor="w").grid(row=2, column=2, sticky="nsew", padx=2, pady=2)
         self.designation_entry = ctk.CTkEntry(self.inner_frame, font=("Arial", 12), fg_color="white", border_width=0, corner_radius=0, width=120)
-        self.designation_entry.grid(row=1, column=3, sticky="nsew", padx=2, pady=2)
-        ctk.CTkLabel(self.inner_frame, text="Salary Grade", font=("Arial", 12, "bold"), fg_color="white", anchor="w").grid(row=1, column=4, sticky="nsew", padx=2, pady=2)
+        self.designation_entry.grid(row=2, column=3, sticky="nsew", padx=2, pady=2)
+        ctk.CTkLabel(self.inner_frame, text="Salary Grade", font=("Arial", 12, "bold"), fg_color="white", anchor="w").grid(row=2, column=4, sticky="nsew", padx=2, pady=2)
         self.salary_grade_entry = ctk.CTkEntry(self.inner_frame, font=("Arial", 12), fg_color="white", border_width=0, corner_radius=0, width=80)
-        self.salary_grade_entry.grid(row=1, column=5, sticky="nsew", padx=2, pady=2)
+        self.salary_grade_entry.grid(row=2, column=5, sticky="nsew", padx=2, pady=2)
 
         # Table header
-        ctk.CTkLabel(self.inner_frame, text="Earnings", font=("Arial", 12, "bold"), fg_color="#e6e6e6", anchor="center").grid(row=2, column=0, columnspan=2, sticky="nsew", padx=1, pady=1)
-        ctk.CTkLabel(self.inner_frame, text="Deductions", font=("Arial", 12, "bold"), fg_color="#e6e6e6", anchor="center").grid(row=2, column=2, columnspan=2, sticky="nsew", padx=1, pady=1)
+        ctk.CTkLabel(self.inner_frame, text="Earnings", font=("Arial", 12, "bold"), fg_color="#e6e6e6", anchor="center").grid(row=3, column=0, columnspan=2, sticky="nsew", padx=1, pady=1)
+        ctk.CTkLabel(self.inner_frame, text="Deductions", font=("Arial", 12, "bold"), fg_color="#e6e6e6", anchor="center").grid(row=3, column=2, columnspan=2, sticky="nsew", padx=1, pady=1)
         # Table columns
-        ctk.CTkLabel(self.inner_frame, text="", fg_color="#e6e6e6").grid(row=2, column=3, columnspan=2, sticky="nsew", padx=1, pady=1)
-        ctk.CTkLabel(self.inner_frame, text="", fg_color="#e6e6e6").grid(row=2, column=4, columnspan=2, sticky="nsew", padx=1, pady=1)
-
-
+        ctk.CTkLabel(self.inner_frame, text="", fg_color="#e6e6e6").grid(row=3, column=3, columnspan=2, sticky="nsew", padx=1, pady=1)
+        ctk.CTkLabel(self.inner_frame, text="", fg_color="#e6e6e6").grid(row=3, column=4, columnspan=2, sticky="nsew", padx=1, pady=1)
 
         # Get earning and deduction fields using the new helper
         earning_labels, deduction_labels = self.get_current_earning_and_deduction_fields()
@@ -190,14 +206,14 @@ class GeneratePayslipPage(ctk.CTkFrame):
             d_text = deduction_labels[i]
             # Only create widgets for not empty fields
             if e_text.strip():
-                ctk.CTkLabel(self.inner_frame, text=e_text, font=("Arial", 12), fg_color="white", anchor="w", width=160).grid(row=3+i, column=0, sticky="nsew", padx=1, pady=1)
-                ctk.CTkEntry(self.inner_frame, font=("Arial", 12), fg_color="white", border_width=0, corner_radius=0, width=120).grid(row=3+i, column=1, sticky="nsew", padx=1, pady=1)
+                ctk.CTkLabel(self.inner_frame, text=e_text, font=("Arial", 12), fg_color="white", anchor="w", width=160).grid(row=4+i, column=0, sticky="nsew", padx=1, pady=1)
+                ctk.CTkEntry(self.inner_frame, font=("Arial", 12), fg_color="white", border_width=0, corner_radius=0, width=120).grid(row=4+i, column=1, sticky="nsew", padx=1, pady=1)
             # Deductions remain unchanged
             if d_text.strip():
-                ctk.CTkLabel(self.inner_frame, text=d_text, font=("Arial", 12), fg_color="white", anchor="w", width=220).grid(row=3+i, column=2, sticky="nsew", padx=1, pady=1)
-                ctk.CTkEntry(self.inner_frame, font=("Arial", 12), fg_color="white", border_width=0, corner_radius=0, width=120).grid(row=3+i, column=3, sticky="nsew", padx=1, pady=1)
+                ctk.CTkLabel(self.inner_frame, text=d_text, font=("Arial", 12), fg_color="white", anchor="w", width=220).grid(row=4+i, column=2, sticky="nsew", padx=1, pady=1)
+                ctk.CTkEntry(self.inner_frame, font=("Arial", 12), fg_color="white", border_width=0, corner_radius=0, width=120).grid(row=4+i, column=3, sticky="nsew", padx=1, pady=1)
         # Totals and netpay 
-        row_offset = 3 + max_rows
+        row_offset = 4 + max_rows
         ctk.CTkLabel(self.inner_frame, text="Total Earnings", font=("Arial", 12, "bold"), fg_color="white", anchor="w").grid(row=row_offset, column=0, sticky="w", padx=(10, 0), pady=(10, 0))
         ctk.CTkEntry(self.inner_frame, font=("Arial", 12), fg_color="white", border_width=0, corner_radius=0, width=120).grid(row=row_offset, column=1, sticky="w", padx=(0, 0), pady=(10, 0))
         ctk.CTkLabel(self.inner_frame, text="Total Deductions", font=("Arial", 12, "bold"), fg_color="white", anchor="w").grid(row=row_offset, column=2, sticky="w", padx=(10, 0), pady=(10, 0))
@@ -492,9 +508,9 @@ class GeneratePayslipPage(ctk.CTkFrame):
         max_rows = max(len(earning_fields), len(deduction_fields))
         for i in range(max_rows):
             if i < len(earning_fields) and earning_fields[i]:
-                field_map[earning_fields[i]] = (3+i, 1)
+                field_map[earning_fields[i]] = (4+i, 1)
             if i < len(deduction_fields) and deduction_fields[i]:
-                field_map[deduction_fields[i]] = (3+i, 3)
+                field_map[deduction_fields[i]] = (4+i, 3)
         # Clear all payslip fields first
         for (row, col) in field_map.values():
             for widget in self.inner_frame.winfo_children():
@@ -525,7 +541,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
             elif field in deduction_fields:
                 total_deductions += v
         # Set totals in the payslip
-        row_offset = 3 + max_rows
+        row_offset = 4 + max_rows
         for widget in self.inner_frame.winfo_children():
             info = widget.grid_info()
             if info.get('row') == row_offset and info.get('column') == 1 and isinstance(widget, ctk.CTkEntry):
@@ -555,7 +571,22 @@ class GeneratePayslipPage(ctk.CTkFrame):
                 except (ValueError, TypeError):
                     widget.insert(0, netpay2)
 
+    def show_ctk_error_popup(self, title, message):
+        popup = ctk.CTkToplevel(self)
+        popup.title(title)
+        popup.geometry("340x120")
+        popup.grab_set()
+        ctk.CTkLabel(popup, text=title, font=("Arial", 15, "bold"), text_color="#d0021b").pack(pady=(18, 4))
+        ctk.CTkLabel(popup, text=message, font=("Arial", 12)).pack(pady=(0, 10))
+        ctk.CTkButton(popup, text="OK", width=80, command=popup.destroy).pack(pady=8)
+
     def download_pdf(self):
+        # Use the persisted value for pay period
+        pay_period = getattr(self, '_pay_period_value', "")
+        if not pay_period.strip():
+            self.show_ctk_error_popup("Error", "Please enter the pay period before downloading.")
+            return
+
         from reportlab.lib.pagesizes import A4
         from reportlab.pdfgen import canvas as pdf_canvas
         from reportlab.lib import colors
@@ -625,7 +656,12 @@ class GeneratePayslipPage(ctk.CTkFrame):
         c.drawCentredString(width/2, header_y, "Professional Regulation Commission")
         c.setFont("Helvetica-Bold", 13)
         c.drawCentredString(width/2, header_y - 18, "Cordillera Administrative Region")
-        y = header_y - 40
+        
+        payslip_date = self.payslip_date_entry.get().strip()
+        c.setFont("Helvetica-Bold", 11)
+        c.drawCentredString(width/2, header_y - 32, f"PAY PERIOD: {payslip_date.upper()}")
+
+        y = header_y - 50
         c.setFont("Helvetica", 12)
         c.drawString(margin, y, f"Name: {name}")
         y -= 16
@@ -687,6 +723,12 @@ class GeneratePayslipPage(ctk.CTkFrame):
         messagebox.showinfo("PDF Saved", f"Payslip PDF saved to:\n{file_path}")
 
     def download_all_pdf(self):
+        # Use the persisted value for pay period
+        pay_period = getattr(self, '_pay_period_value', "")
+        if not pay_period.strip():
+            self.show_ctk_error_popup("Error", "Please enter the pay period before downloading.")
+            return
+
         from reportlab.lib.pagesizes import A4
         from reportlab.pdfgen import canvas as pdf_canvas
         from reportlab.lib import colors
@@ -757,7 +799,12 @@ class GeneratePayslipPage(ctk.CTkFrame):
                 c.drawCentredString(width/2, header_y, "Professional Regulation Commission")
                 c.setFont("Helvetica-Bold", 13)
                 c.drawCentredString(width/2, header_y - 18, "Cordillera Administrative Region")
-                y = header_y - 40
+                
+                payslip_date = self.payslip_date_entry.get().strip()
+                c.setFont("Helvetica-Bold", 11)
+                c.drawCentredString(width/2, header_y - 32, f"PAY PERIOD: {payslip_date.upper()}")
+
+                y = header_y - 50
                 c.setFont("Helvetica", 12)
                 c.drawString(margin, y, f"Name: {name}")
                 y -= 16
@@ -812,10 +859,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
                 c.drawString(margin, y, f"Netpay (1st half): {fmt_num(netpay1)}")
                 y -= 16
                 c.drawString(margin, y, f"Netpay (2nd half): {fmt_num(netpay2)}")
-                if payslip_num == 1 or (idx + payslip_num == len(names) - 1):
-                    c.setFont("Helvetica-Oblique", 9)
-                    c.setFillColor(colors.grey)
-                    c.drawString(margin, 30, f"Generated by PRC Payroll System - v1.0")
+
                 c.setFillColor(colors.black)  
             if idx + 2 < len(names):
                 c.showPage()  # New page for next two payslips
