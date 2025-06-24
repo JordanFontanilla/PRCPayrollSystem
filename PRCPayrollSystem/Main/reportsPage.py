@@ -3,7 +3,7 @@ import tkinter as tk
 import os
 import csv
 import sys
-from PRCPayrollSystem.Main.resource_utils import resource_path
+from PRCPayrollSystem.Main.resource_utils import resource_path, data_path
 
 class ReportsPage(ctk.CTkFrame):
     def __init__(self, parent, controller=None):
@@ -16,7 +16,7 @@ class ReportsPage(ctk.CTkFrame):
         self.default_col_headers = [
             "PAP / UAC CODE", "", "MO.SALARY", "PERA AMOUNT", "GSIS", "PHIC", "HDMF", "OTHER DEDUCTIONS"
         ]
-        settings_path = resource_path("settingsAndFields/deductionSettings.csv")
+        settings_path = data_path("settingsAndFields/deductionSettings.csv")
         loaded_uac = []
         self._selected_other_deduction_cols = []
         self._deduction_colnames = []
@@ -298,7 +298,7 @@ class ReportsPage(ctk.CTkFrame):
                 return
             self._selected_other_deduction_cols = selected
             # refactor Update: deductionSettings.csv is now in settingsAndFields directory for clarity
-            settings_path = resource_path("settingsAndFields/deductionSettings.csv")
+            settings_path = data_path("settingsAndFields/deductionSettings.csv")
             colnames = []
             if hasattr(self.controller, 'frames') and 'ExcelImportPage' in self.controller.frames:
                 excel_page = self.controller.frames['ExcelImportPage']
@@ -427,7 +427,7 @@ class ReportsPage(ctk.CTkFrame):
             new_count = len(uac_codes)
             self.default_row_headers = list(uac_codes)
             # Updated: deductionSettings.csv is now in settingsAndFields directory for clarity
-            settings_path = resource_path("settingsAndFields/deductionSettings.csv")
+            settings_path = data_path("settingsAndFields/deductionSettings.csv")
             # Read existing lines to preserve DEDCOLS if present
             dedcols_line = None
             if os.path.exists(settings_path):

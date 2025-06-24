@@ -10,7 +10,7 @@ from reportlab.lib.units import mm
 import csv
 import os
 import sys
-from PRCPayrollSystem.Main.resource_utils import resource_path
+from PRCPayrollSystem.Main.resource_utils import resource_path, data_path
 import re
 import shutil
 from datetime import datetime
@@ -24,7 +24,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
 
     def load_updated_fields(self):
         """Load custom and removed fields from updatedFields.csv and apply to the payslip config."""
-        updated_fields_path = resource_path("settingsAndFields/updatedFields.csv")
+        updated_fields_path = data_path("settingsAndFields/updatedFields.csv")
         custom_map = {}
         custom_types = {}
         removed = set()
@@ -867,7 +867,7 @@ class GeneratePayslipPage(ctk.CTkFrame):
         messagebox.showinfo("PDF Saved", f"All payslips PDF saved to:\n{file_path}")
         # Save a copy in pastPayslips folder
         try:
-            past_payslips_dir = resource_path("pastPayslips")
+            past_payslips_dir = data_path("pastPayslips")
             if not os.path.exists(past_payslips_dir):
                 os.makedirs(past_payslips_dir)
             dt_str = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -895,8 +895,8 @@ class GeneratePayslipPage(ctk.CTkFrame):
 
     def save_updated_fields(self):
         """Save custom and removed fields to updatedFields.csv and update payslipSettings.csv."""
-        updated_fields_path = resource_path("settingsAndFields/updatedFields.csv")
-        payslip_settings_path = resource_path("settingsAndFields/payslipSettings.csv")
+        updated_fields_path = data_path("settingsAndFields/updatedFields.csv")
+        payslip_settings_path = data_path("settingsAndFields/payslipSettings.csv")
         custom_map = getattr(self, '_custom_field_map', {})
         custom_types = getattr(self, '_custom_field_types', {})
         removed = getattr(self, '_removed_default_fields', set())

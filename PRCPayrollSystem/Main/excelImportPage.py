@@ -3,7 +3,7 @@ import tkinter as tk
 import os
 import csv
 import glob
-from PRCPayrollSystem.Main.resource_utils import resource_path
+from PRCPayrollSystem.Main.resource_utils import resource_path, data_path
 
 class ExcelImportPage(ctk.CTkFrame):
     def __init__(self, parent, controller=None):
@@ -12,7 +12,7 @@ class ExcelImportPage(ctk.CTkFrame):
         self.rows = 8  # 7 data + 1 header (DEFAULT LOGIC)
         self.cols = 11
         # Directory to save history files (always same folder)
-        self.history_dir = resource_path("pastLoadedHistory")
+        self.history_dir = data_path("pastLoadedHistory")
         self._build_ui()
 
     def _build_ui(self):
@@ -74,14 +74,16 @@ class ExcelImportPage(ctk.CTkFrame):
             widget.destroy()
         header_font = ("Arial", 10, "bold")
         cell_font = ("Arial", 10)
-        for r in range(self.rows):
-            for c in range(self.cols):
+        for r in range(self.rows + 1):  # +1 for header row
+            for c in range(self.cols + 1):  # +1 for row number column
                 if r == 0 and c == 0:
                     entry = ctk.CTkLabel(self.inner, text="", width=30, fg_color="#e6e6e6")
                 elif r == 0:
+                    # Column alphabet headers
                     col_letter = chr(64 + c) if c <= 26 else chr(64 + (c-1)//26) + chr(65 + (c-1)%26)
                     entry = ctk.CTkLabel(self.inner, text=col_letter, width=90, fg_color="#22C32A", text_color="white", font=header_font)
                 elif c == 0:
+                    # Row number headers
                     entry = ctk.CTkLabel(self.inner, text=str(r), width=30, fg_color="#e6e6e6", font=header_font)
                 else:
                     entry = ctk.CTkEntry(self.inner, width=90, justify="center", border_width=1, corner_radius=0)
@@ -98,8 +100,10 @@ class ExcelImportPage(ctk.CTkFrame):
                             pass
                     entry.bind("<FocusOut>", format_decimal)
                     # Fill with data if present
-                    if hasattr(self, 'data') and r-1 < len(self.data) and c-1 < len(self.data[r-1]):
-                        val = self.data[r-1][c-1]
+                    data_r = r - 1
+                    data_c = c - 1
+                    if hasattr(self, 'data') and data_r < len(self.data) and data_c < len(self.data[data_r]):
+                        val = self.data[data_r][data_c]
                         try:
                             if val != '' and val is not None:
                                 val = float(val)
@@ -212,18 +216,21 @@ class ExcelImportPage(ctk.CTkFrame):
         headers: list of str
         data: list of lists (rows)
         """
-        # Dynamically set rows and cols to fit the data
-        self.cols = max(len(headers), max((len(row) for row in data), default=0))
-        self.rows = len(data) + 1  
-        # Treat the loaded header row as the first data row
-        self.headers = [chr(65 + c) if c < 26 else chr(65 + (c // 26) - 1) + chr(65 + (c % 26)) for c in range(self.cols)]
+        # Set rows and cols to match the loaded data exactly
+        self.cols = len(headers)
+        self.rows = len(data) + 1  # 1 header row + data rows
+        # Store headers for possible use
+        self.headers = headers
         # Format numeric cells with thousands comma and two decimals
         formatted_data = []
-        for row in [headers] + data:
+        formatted_data.append([
+            f"{float(val):,.2f}" if val is not None and str(val).replace(',', '').replace('.', '', 1).isdigit() and val.strip() != '' else val
+            for val in headers
+        ])
+        for row in data:
             formatted_row = []
             for val in row[:self.cols]:
                 try:
-                    # Only format if it's a number and not empty
                     if val is not None and str(val).strip() != "":
                         num = float(str(val).replace(',', ''))
                         formatted_row.append(f"{num:,.2f}")
@@ -231,7 +238,6 @@ class ExcelImportPage(ctk.CTkFrame):
                         formatted_row.append("")
                 except Exception:
                     formatted_row.append(val)
-            # Pad if row is short
             formatted_row += ["" for _ in range(self.cols - len(formatted_row))]
             formatted_data.append(formatted_row)
         self.data = formatted_data
@@ -242,25 +248,8 @@ class ExcelImportPage(ctk.CTkFrame):
 
     def go_to_reports_page(self):
         if self.controller:
-            # Get excel data from the table 
-            excel_data = []
-            for r in range(1, self.rows):
-                row = []
-                for c in range(1, self.cols):
-                    widgets = self.inner.grid_slaves(row=r, column=c)
-                    val = ""
-                    for widget in widgets:
-                        if isinstance(widget, ctk.CTkEntry):
-                            v = widget.get()
-                            # Remove commas for numeric values
-                            try:
-                                v_clean = v.replace(",", "")
-                                float(v_clean)
-                                val = v_clean
-                            except Exception:
-                                val = v
-                    row.append(val)
-                excel_data.append(row)
+            # Get excel data from the table
+            excel_data = self.get_table_data()
             # Save to controller for access in ReportsPage
             self.controller.excel_data = excel_data
             if hasattr(self.controller, 'get_page'):
@@ -348,9 +337,9 @@ class ExcelImportPage(ctk.CTkFrame):
         Removes commas from numbers for correct downstream processing.
         """
         data = []
-        for r in range(1, self.rows):
+        for r in range(1, self.rows + 1):
             row = []
-            for c in range(1, self.cols):
+            for c in range(1, self.cols + 1):
                 widgets = self.inner.grid_slaves(row=r, column=c)
                 val = ""
                 for widget in widgets:
@@ -368,11 +357,8 @@ class ExcelImportPage(ctk.CTkFrame):
             return
         if not os.path.exists(self.history_dir):
             os.makedirs(self.history_dir)
-        # Use date for filename and a unique ID for the day
         today = datetime.datetime.now().strftime('%Y%m%d')
-        # Find all files for today
         existing = [f for f in os.listdir(self.history_dir) if f.startswith(f"excelHistory_{today}_") and f.endswith('.csv')]
-        # Extract IDs and find next available
         ids = []
         for f in existing:
             try:
@@ -383,6 +369,7 @@ class ExcelImportPage(ctk.CTkFrame):
         next_id = max(ids) + 1 if ids else 1
         fname = f"excelHistory_{today}_{next_id:04d}.csv"
         fpath = os.path.join(self.history_dir, fname)
+        # Save only the table data: first row is header, rest are data rows
         with open(fpath, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             for row in table_data:

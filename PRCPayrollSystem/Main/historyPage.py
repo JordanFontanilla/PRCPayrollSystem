@@ -3,16 +3,16 @@ import tkinter as tk
 import os
 import csv
 import sys
-from PRCPayrollSystem.Main.resource_utils import resource_path
+from PRCPayrollSystem.Main.resource_utils import resource_path, data_path
 
 class HistoryPage(ctk.CTkFrame):
     def __init__(self, parent, controller=None):
         super().__init__(parent, fg_color="white")
         self.controller = controller
         self._loading_summary = False  # to prevent re-entrant selection if empty it somehow does not work
-        self.history_dir = resource_path("pastLoadedHistory")
+        self.history_dir = data_path("pastLoadedHistory")
         # Directory for payslip PDFs
-        self.payslip_dir = resource_path("pastPayslips")
+        self.payslip_dir = data_path("pastPayslips")
         self._build_ui()
         self.load_history_files()
 

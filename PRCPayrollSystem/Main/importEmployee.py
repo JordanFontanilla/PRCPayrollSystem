@@ -6,7 +6,7 @@ import tkinter.messagebox as messagebox
 import tkinter as tk
 import sys
 import os
-from PRCPayrollSystem.Main.resource_utils import resource_path
+from PRCPayrollSystem.Main.resource_utils import resource_path, data_path
 
 class ExcelLikeTable(ctk.CTkFrame):
     def __init__(self, parent, rows=10, cols=10):
@@ -247,7 +247,7 @@ class ImportEmployeePage(ctk.CTkFrame):
     def save_employees(self):
         # Save the employee table data CSV file in past playslips 
         import os
-        file_path = resource_path("settingsAndFields/employee_records.csv")
+        file_path = data_path("settingsAndFields/employee_records.csv")
         # Gather data from the table
         data = []
         for r in range(self.table.rows):
@@ -269,7 +269,7 @@ class ImportEmployeePage(ctk.CTkFrame):
     def _load_default_employee_csv(self):
         import os
         import csv
-        file_path = resource_path("settingsAndFields/employee_records.csv")
+        file_path = data_path("settingsAndFields/employee_records.csv")
         if os.path.exists(file_path):
             with open(file_path, 'r', encoding='utf-8') as f:
                 reader = list(csv.reader(f))
